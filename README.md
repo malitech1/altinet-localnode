@@ -1,0 +1,75 @@
+# altinet-localnode
+
+A first prototype of **Altinet LocalNode**, a local home intelligence system.
+
+This project focuses on:
+- Receiving structured home context (house, users, rooms, sensors, actions)
+- Validating data with typed schemas using Pydantic
+- Preparing structured prompts for a future decision model
+
+> Note: This prototype intentionally does **not** include OpenAI API calls yet.
+
+## Requirements
+
+- Python 3.11+
+
+## Project structure
+
+```text
+altinet-localnode/
+├── .env.example
+├── README.md
+├── requirements.txt
+├── src/
+│   └── altinet/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── actions/
+│       ├── config/
+│       ├── context/
+│       │   └── schemas.py
+│       ├── decision/
+│       │   └── prompt_builder.py
+│       ├── memory/
+│       └── perception/
+└── tests/
+    └── test_main.py
+```
+
+## Setup
+
+### Windows (PowerShell)
+
+1. Create virtual environment:
+   ```powershell
+   py -3.11 -m venv .venv
+   ```
+2. Activate it:
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+3. Install dependencies:
+   ```powershell
+   python -m pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+## Run CLI
+
+From project root:
+
+```bash
+python -m src.altinet.main
+```
+
+Expected output:
+
+```text
+Altinet LocalNode running
+```
+
+## Run tests
+
+```bash
+pytest
+```
