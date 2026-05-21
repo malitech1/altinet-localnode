@@ -135,6 +135,12 @@ Troubleshooting webcam permissions (Windows):
 - Close other apps using the webcam before running Altinet commands.
 - In PyCharm, restart the run configuration/interpreter after granting permissions.
 
+## Dashboard floorplan note
+
+The current dashboard floorplan is a **mock visual layer** rendered in CSS/JavaScript for UI prototyping. It displays room tiles and overlays residents/devices/agents from `/api/state` when available, with placeholders when runtime files are missing. Real editable floorplan JSON integration is planned for a later phase.
+
+---
+
 ## Running tests
 
 From project root (with `.venv` active):

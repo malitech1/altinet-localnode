@@ -7,18 +7,61 @@
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
-    <main class="container">
-      <h1>Altinet LocalNode</h1>
-      <div class="grid">
-        <section><h2>Current Time</h2><p id="current-time">Loading...</p></section>
-        <section><h2>System Status</h2><p id="system-status">Loading...</p></section>
-        <section><h2>Perception Summary</h2><pre id="perception-summary">Loading...</pre></section>
-        <section><h2>Latest Decision</h2><pre id="latest-decision">Loading...</pre><p id="decision-explanation"></p></section>
-        <section><h2>Recent Events</h2><pre id="recent-events">Loading...</pre></section>
-        <section><h2>Runtime State</h2><pre id="runtime-state">Loading...</pre></section>
-        <section><h2>Room Context</h2><pre id="room-context">Loading...</pre></section>
-        <section><h2>Latest Capture</h2><img id="latest-capture" alt="Latest room capture" /><p id="capture-placeholder"></p></section>
-      </div>
+    <main class="dashboard-shell">
+      <aside class="panel sidebar-left">
+        <h1>Altinet LocalNode</h1>
+        <nav>
+          <ul class="nav-list">
+            <li class="active">Overview</li>
+            <li>Runtime</li>
+            <li>Perception</li>
+            <li>Agents</li>
+            <li>Energy</li>
+          </ul>
+        </nav>
+        <section class="mini-card">
+          <h3>System Status</h3>
+          <p id="system-status">Loading...</p>
+        </section>
+      </aside>
+
+      <section class="main-stage">
+        <header class="panel top-header">
+          <div>
+            <p class="eyebrow">Home Intelligence Dashboard</p>
+            <h2 id="header-date">Loading date...</h2>
+          </div>
+          <div class="time-pill" id="current-time">--:--:--</div>
+        </header>
+
+        <section class="panel weather-card">
+          <h3>Weather</h3>
+          <p id="weather-placeholder">72°F · Clear skies (placeholder)</p>
+        </section>
+
+        <section class="panel floorplan-panel">
+          <h3>Floorplan</h3>
+          <div class="floorplan-grid" id="floorplan-grid"></div>
+          <div class="legend-row">
+            <span><i class="dot resident"></i>Resident</span>
+            <span><i class="dot device"></i>Device</span>
+            <span><i class="dot agent"></i>Agent</span>
+          </div>
+        </section>
+
+        <section class="bottom-cards" id="bottom-cards"></section>
+      </section>
+
+      <aside class="panel sidebar-right">
+        <section class="side-card">
+          <h3>Residents</h3>
+          <ul id="residents-list"></ul>
+        </section>
+        <section class="side-card">
+          <h3>Last 3 Decisions</h3>
+          <div id="decisions-list"></div>
+        </section>
+      </aside>
     </main>
     <script src="/static/dashboard.js"></script>
   </body>
