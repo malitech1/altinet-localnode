@@ -98,6 +98,7 @@ Create a `.env` file in the project root:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
+OPENAI_VISION_MODEL=gpt-4.1-mini
 ```
 
 The following commands require `OPENAI_API_KEY`:
@@ -228,6 +229,7 @@ Expected behavior:
 
 Requires:
 - `OPENAI_API_KEY`
+- Optional: `OPENAI_VISION_MODEL` (defaults to `gpt-4.1-mini`)
 
 Uses:
 - `examples/sample_house_state.json`
@@ -269,12 +271,33 @@ python -m altinet.main analyse-room-image <path-to-image>
 
 Expected behavior:
 - Sends image to OpenAI Vision for structured room-context extraction.
+
+Privacy note:
+- Images are processed locally by default.
+- A captured image is only sent to OpenAI when you explicitly run `analyse-room-image`.
+- `observe-room` remains local-only and does not upload image data.
+
+Expected output schema:
+```json
+{
+  "room_type_guess": "bedroom | kitchen | living_room | office | bathroom | unknown",
+  "visible_people": [],
+  "visible_pets": [],
+  "visible_devices": [],
+  "lights_on": true,
+  "lighting_description": "...",
+  "notable_objects": [],
+  "safety_concerns": [],
+  "summary": "..."
+}
+```
 - Saves validated JSON to `data/context/latest_room_context.json`.
 - Prints the saved JSON.
 - If OpenAI call/config fails, prints `Room context error: ...`.
 
 Requires:
 - `OPENAI_API_KEY`
+- Optional: `OPENAI_VISION_MODEL` (defaults to `gpt-4.1-mini`)
 
 Uses/creates:
 - Input image path you provide

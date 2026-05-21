@@ -19,7 +19,7 @@ from altinet.memory import EpisodicMemory, MemoryContext, MemorySystem
 from altinet.runtime.runtime_loop import run_runtime_loop
 from altinet.perception.capture import capture_room_image
 from altinet.perception.pipeline import observe_room
-from altinet.perception.room_context import analyse_room_image_with_openai
+from altinet.perception.vision_engine import analyse_room_image_with_openai
 
 
 DEFAULT_SAMPLE_PATH = Path("examples/sample_house_state.json")
