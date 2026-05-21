@@ -73,3 +73,20 @@ Altinet LocalNode running
 ```bash
 pytest
 ```
+
+
+## Generate contextualised text block
+
+Run the contextualiser CLI with the provided sample state:
+
+```bash
+python -m src.altinet.main contextualise --sample-path examples/sample_house_state.json
+```
+
+Optional: include recent events (repeat `--event`):
+
+```bash
+python -m src.altinet.main contextualise --sample-path examples/sample_house_state.json --event "Motion detected in hallway" --event "Front door opened"
+```
+
+This prints a natural-language context block suitable for decision-model input.
