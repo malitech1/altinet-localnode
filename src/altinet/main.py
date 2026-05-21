@@ -18,6 +18,7 @@ from altinet.events.queue import EventQueue
 from altinet.memory import EpisodicMemory, MemoryContext, MemorySystem
 from altinet.runtime.runtime_loop import run_runtime_loop
 from altinet.perception.capture import capture_room_image
+from altinet.perception.pipeline import observe_room
 from altinet.perception.room_context import analyse_room_image_with_openai
 
 
@@ -83,8 +84,18 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     subparsers.add_parser(
+        "webcam-test",
+        help="Check whether the default webcam can be opened.",
+    )
+
+    subparsers.add_parser(
         "capture-room",
         help="Capture a single image from the default webcam for perception testing.",
+    )
+
+    subparsers.add_parser(
+        "observe-room",
+        help="Capture a room image and print a structured local observation.",
     )
 
     analyse_room_image_parser = subparsers.add_parser(
@@ -144,12 +155,22 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Runtime stopped after {stats.ticks} ticks; events={stats.events_processed}; decisions={stats.decisions_made}; errors={stats.loop_errors}")
         return
 
+    if args.command == "webcam-test":
+        success, message = capture_room_image()
+        status = "Webcam OK:" if success else "Webcam unavailable:"
+        print(f"{status} {message}")
+        return
+
     if args.command == "capture-room":
         success, message = capture_room_image()
         prefix = "Capture complete:" if success else "Capture skipped:"
         print(f"{prefix} {message}")
         return
 
+    if args.command == "observe-room":
+        observation = observe_room()
+        print(observation.model_dump_json(indent=2))
+        return
 
     if args.command == "analyse-room-image":
         try:

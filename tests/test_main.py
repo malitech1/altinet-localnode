@@ -125,3 +125,36 @@ def test_runtime_command_runs_loop(monkeypatch, capsys):
 
     assert "Runtime stopped after 3 ticks" in captured.out
     assert "events=6" in captured.out
+
+
+def test_webcam_test_command_reports_status(monkeypatch, capsys):
+    monkeypatch.setattr("altinet.main.capture_room_image", lambda: (True, "Captured image saved to data/captures/latest.jpg"))
+
+    main(["webcam-test"])
+    captured = capsys.readouterr()
+
+    assert "Webcam OK:" in captured.out
+
+
+def test_observe_room_command_prints_structured_output(monkeypatch, capsys):
+    from altinet.perception.models import CameraFrame, LightingObservation, PerceptionObservation, RoomObservation
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    ts = datetime.now(timezone.utc)
+    fake = PerceptionObservation(
+        frame=CameraFrame(image_path=Path("data/captures/latest.jpg"), captured_at=ts, camera_available=True),
+        room=RoomObservation(
+            image_path=Path("data/captures/latest.jpg"),
+            timestamp=ts,
+            camera_available=True,
+            lighting=LightingObservation(brightness_estimate=123, lighting_guess="dim"),
+        ),
+    )
+    monkeypatch.setattr("altinet.main.observe_room", lambda: fake)
+
+    main(["observe-room"])
+    captured = capsys.readouterr()
+
+    assert '"source": "webcam"' in captured.out
+    assert '"lighting_guess": "dim"' in captured.out
