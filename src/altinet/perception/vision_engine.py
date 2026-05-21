@@ -33,15 +33,23 @@ def _build_vision_prompt() -> str:
     )
 
 
-def analyse_room_image_with_openai(image_path: Path) -> RoomContextResponse:
-    """Extract structured room context from an image using a vision-capable OpenAI model."""
-    load_dotenv()
+def _get_openai_api_key(*, load_env: bool = True) -> str:
+    """Return OPENAI_API_KEY, optionally loading variables from a local .env file first."""
+    if load_env:
+        load_dotenv()
+
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError(
             "OPENAI_API_KEY is not set. OpenAI vision is unavailable. "
             "Add OPENAI_API_KEY to .env, or run `python -m altinet.main observe-room` for local-only analysis."
         )
+    return api_key
+
+
+def analyse_room_image_with_openai(image_path: Path, *, load_env: bool = True) -> RoomContextResponse:
+    """Extract structured room context from an image using a vision-capable OpenAI model."""
+    api_key = _get_openai_api_key(load_env=load_env)
 
     if not image_path.exists():
         raise RuntimeError(f"Image not found: {image_path}")

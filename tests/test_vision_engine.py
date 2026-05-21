@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from altinet.perception.vision_engine import analyse_room_image_with_openai
+import altinet.perception.vision_engine as vision_engine
 
 
 class _FakeResponse:
@@ -46,7 +46,7 @@ def test_analyse_room_image_with_openai_validates_schema(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENAI_VISION_MODEL", "gpt-test-vision")
     _install_fake_openai(monkeypatch, json.dumps(payload))
 
-    result = analyse_room_image_with_openai(image_path)
+    result = vision_engine.analyse_room_image_with_openai(image_path)
 
     assert result.room_type_guess == "office"
     assert result.visible_devices == ["laptop"]
@@ -57,10 +57,11 @@ def test_analyse_room_image_with_openai_handles_missing_api_key(monkeypatch, tmp
     image_path = tmp_path / "latest.jpg"
     image_path.write_bytes(b"fake")
 
+    monkeypatch.setattr(vision_engine, "load_dotenv", lambda: None)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     with pytest.raises(RuntimeError) as exc:
-        analyse_room_image_with_openai(image_path)
+        vision_engine.analyse_room_image_with_openai(image_path)
 
     assert "OPENAI_API_KEY is not set" in str(exc.value)
     assert "observe-room" in str(exc.value)
@@ -74,6 +75,16 @@ def test_analyse_room_image_with_openai_rejects_invalid_json(monkeypatch, tmp_pa
     _install_fake_openai(monkeypatch, '{"room_type_guess":"garage"}')
 
     with pytest.raises(RuntimeError) as exc:
-        analyse_room_image_with_openai(image_path)
+        vision_engine.analyse_room_image_with_openai(image_path)
 
     assert "does not match RoomContextResponse" in str(exc.value)
+
+
+def test_analyse_room_image_with_openai_handles_missing_image_path(monkeypatch, tmp_path):
+    image_path = tmp_path / "missing.jpg"
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    with pytest.raises(RuntimeError) as exc:
+        vision_engine.analyse_room_image_with_openai(image_path)
+
+    assert "Image not found" in str(exc.value)
