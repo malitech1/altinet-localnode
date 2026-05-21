@@ -8,6 +8,7 @@ from pathlib import Path
 
 from altinet.context.contextualiser import build_context_block
 from altinet.context.schemas import HouseState, PossibleAction
+from altinet.decision.mock_engine import decide_action
 from altinet.decision.prompt_builder import build_decision_prompt
 
 
@@ -54,6 +55,15 @@ def main(argv: list[str] | None = None) -> None:
         help="Recent event text. Can be provided multiple times.",
     )
 
+    decide_parser = subparsers.add_parser(
+        "decide", help="Run the local mock decision engine against a HouseState JSON file."
+    )
+    decide_parser.add_argument(
+        "sample_path",
+        type=Path,
+        help="Path to a HouseState JSON file, e.g. examples/sample_house_state.json.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "contextualise":
@@ -62,6 +72,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "build-prompt":
         print(_build_prompt_from_path(args.sample_path, args.event))
+        return
+
+    if args.command == "decide":
+        print(_decide_from_path(args.sample_path))
         return
 
     print("Altinet LocalNode running")
@@ -77,6 +91,13 @@ def _build_prompt_from_path(sample_path: Path, events: list[str]) -> str:
     with sample_path.open("r", encoding="utf-8") as fh:
         house_state = HouseState.model_validate(json.load(fh))
     return build_decision_prompt(house_state=house_state, possible_actions=DEFAULT_ACTIONS, recent_events=events)
+
+
+def _decide_from_path(sample_path: Path) -> str:
+    with sample_path.open("r", encoding="utf-8") as fh:
+        house_state = HouseState.model_validate(json.load(fh))
+    decision = decide_action(house_state)
+    return decision.model_dump_json(indent=2)
 
 
 if __name__ == "__main__":

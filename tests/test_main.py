@@ -22,3 +22,11 @@ def test_build_prompt_command_prints_complete_prompt(capsys):
     assert "# System Role" in captured.out
     assert "# Required JSON Response Format" in captured.out
     assert "turn_light_on" in captured.out
+
+
+def test_decide_command_prints_mock_decision(capsys):
+    main(["decide", "examples/sample_house_state.json"])
+    captured = capsys.readouterr()
+
+    assert '"selected_action": "turn_light_on"' in captured.out
+    assert '"confidence"' in captured.out
