@@ -428,3 +428,43 @@ Fix:
 1. Set **Default test runner** to `pytest` (Settings → Tools → Python Integrated Tools).
 2. Run tests from project root.
 3. Ensure interpreter is `.venv` and dependencies are installed.
+
+---
+
+## Dashboard (LocalNode display panel)
+
+Run the FastAPI dashboard:
+
+```powershell
+python -m altinet.main dashboard
+```
+
+Open in browser:
+
+- `http://127.0.0.1:8000`
+
+The page auto-refreshes every 2 seconds by polling `GET /api/state`.
+
+### Recommended workflow with webcam capture
+
+1. Capture latest image:
+   ```powershell
+   python -m altinet.main capture-room
+   ```
+2. Refresh browser (or wait for auto-refresh).
+3. Optional: run runtime loop in another terminal so `data/runtime/runtime_state.json` updates continuously.
+
+### PyCharm / Windows port troubleshooting
+
+If port `8000` is already used in PyCharm or Windows:
+
+```powershell
+python -m altinet.main dashboard --port 8010
+```
+
+Then open `http://127.0.0.1:8010`.
+
+If binding fails:
+- Close any existing Python/Uvicorn process using the same port.
+- In PyCharm, stop old run configurations before starting a new dashboard run.
+- Use `--host 127.0.0.1` explicitly if firewall/network policy blocks non-local binding.

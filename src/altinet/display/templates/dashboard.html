@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Altinet LocalNode Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Altinet LocalNode</h1>
+      <div class="grid">
+        <section><h2>Current Time</h2><p id="current-time">Loading...</p></section>
+        <section><h2>System Status</h2><p id="system-status">Loading...</p></section>
+        <section><h2>Perception Summary</h2><pre id="perception-summary">Loading...</pre></section>
+        <section><h2>Latest Decision</h2><pre id="latest-decision">Loading...</pre><p id="decision-explanation"></p></section>
+        <section><h2>Recent Events</h2><pre id="recent-events">Loading...</pre></section>
+        <section><h2>Runtime State</h2><pre id="runtime-state">Loading...</pre></section>
+        <section><h2>Room Context</h2><pre id="room-context">Loading...</pre></section>
+        <section><h2>Latest Capture</h2><img id="latest-capture" alt="Latest room capture" /><p id="capture-placeholder"></p></section>
+      </div>
+    </main>
+    <script src="/static/dashboard.js"></script>
+  </body>
+</html>

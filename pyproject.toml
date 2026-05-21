@@ -15,7 +15,10 @@ dependencies = [
   "pydantic",
   "pytest",
   "python-dotenv",
-  "opencv-python"
+  "opencv-python",
+  "fastapi",
+  "uvicorn",
+  "jinja2"
 ]
 
 [tool.setuptools]

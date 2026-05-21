@@ -20,6 +20,8 @@ from altinet.runtime.runtime_loop import run_runtime_loop
 from altinet.perception.capture import capture_room_image
 from altinet.perception.pipeline import observe_room
 from altinet.perception.vision_engine import analyse_room_image_with_openai
+from altinet.display.app import create_app
+import uvicorn
 
 
 DEFAULT_SAMPLE_PATH = Path("examples/sample_house_state.json")
@@ -120,6 +122,9 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     runtime_parser = subparsers.add_parser("runtime", help="Run the continuous LocalNode runtime loop.")
+    dashboard_parser = subparsers.add_parser("dashboard", help="Run the LocalNode display dashboard.")
+    dashboard_parser.add_argument("--host", default="127.0.0.1")
+    dashboard_parser.add_argument("--port", type=int, default=8000)
     runtime_parser.add_argument("--sample-path", type=Path, default=DEFAULT_SAMPLE_PATH)
     runtime_parser.add_argument("--tick-rate", type=float, default=1.0, help="Tick rate in Hz.")
     runtime_parser.add_argument("--max-ticks", type=int, default=None, help="Optional max ticks for bounded runs.")
@@ -153,6 +158,10 @@ def main(argv: list[str] | None = None) -> None:
     if args.command == "runtime":
         stats = run_runtime_loop(args.sample_path, tick_rate_hz=args.tick_rate, max_ticks=args.max_ticks)
         print(f"Runtime stopped after {stats.ticks} ticks; events={stats.events_processed}; decisions={stats.decisions_made}; errors={stats.loop_errors}")
+        return
+
+    if args.command == "dashboard":
+        uvicorn.run(create_app(), host=args.host, port=args.port)
         return
 
     if args.command == "webcam-test":
