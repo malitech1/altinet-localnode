@@ -1,143 +1,377 @@
 # altinet-localnode
 
-A first prototype of **Altinet LocalNode**, a local home intelligence system.
+A prototype of **Altinet LocalNode**, a local home-intelligence CLI for contextualising house state, simulating events, running decision engines, and testing perception/memory/runtime workflows.
 
-This project focuses on:
-- Receiving structured home context (house, users, rooms, sensors, actions)
-- Validating data with typed schemas using Pydantic
-- Preparing structured prompts for a future decision model
+## What you can run
 
-## Requirements
+The CLI entrypoint is implemented in `src/altinet/main.py` and exposes these commands:
 
-- Python 3.11+
+- `contextualise`
+- `build-prompt`
+- `decide` (`--engine mock_engine` or `--engine openai`)
+- `capture-room`
+- `analyse-room-image`
+- `simulate-events`
+- `memory-demo`
+- `runtime`
 
-## Project structure
-
-```text
-altinet-localnode/
-├── .env.example
-├── README.md
-├── requirements.txt
-├── src/
-│   └── altinet/
-│       ├── __init__.py
-│       ├── main.py
-│       ├── actions/
-│       ├── config/
-│       ├── context/
-│       │   └── schemas.py
-│       ├── decision/
-│       │   └── prompt_builder.py
-│       ├── memory/
-│       └── perception/
-└── tests/
-    └── test_main.py
-```
-
-## Setup
-
-### Windows (PowerShell)
-
-1. Create virtual environment:
-   ```powershell
-   py -3.11 -m venv .venv
-   ```
-2. Activate it:
-   ```powershell
-   .\.venv\Scripts\Activate.ps1
-   ```
-3. Install dependencies:
-   ```powershell
-   python -m pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-
-## Run CLI
-
-From project root:
-
-```bash
-python -m altinet.main
-```
-
-Expected output:
+Running the CLI with no command prints:
 
 ```text
 Altinet LocalNode running
 ```
 
-## Run tests
+---
 
-```bash
-pytest
-```
+## Prerequisites
 
+- **Windows 10/11**
+- **Python 3.11+** (64-bit)
+- **PyCharm** (Community or Professional)
+- Optional hardware: a webcam for `capture-room`
+- Optional API access: an OpenAI API key for OpenAI-powered commands
 
-## Generate contextualised text block
+---
 
-Run the contextualiser CLI with the provided sample state:
+## PyCharm setup (Windows)
 
-```bash
-python -m altinet.main contextualise --sample-path examples/sample_house_state.json
-```
+1. **Clone the repository**
+   ```powershell
+   git clone <your-repo-url>
+   cd altinet-localnode
+   ```
 
-Optional: include recent events (repeat `--event`):
+2. **Open in PyCharm**
+   - PyCharm → **Open** → select the cloned `altinet-localnode` folder.
 
-```bash
-python -m altinet.main contextualise --sample-path examples/sample_house_state.json --event "Motion detected in hallway" --event "Front door opened"
-```
+3. **Configure the project interpreter (virtual environment)**
+   - PyCharm → **File** → **Settings** → **Project: altinet-localnode** → **Python Interpreter**.
+   - Click the gear icon → **Add...**
+   - Choose **Virtualenv Environment**.
+   - Base interpreter: Python 3.11+
+   - Location: `.venv` in this project
+   - Click **OK**.
 
-This prints a natural-language context block suitable for decision-model input.
+4. **Open PyCharm Terminal**
+   - View → Tool Windows → **Terminal**.
+   - Confirm Python points to your `.venv`:
+     ```powershell
+     python --version
+     ```
 
-## OpenAI decision engine
+---
 
-1. Create a `.env` file in the project root with your key:
+## Local environment setup (terminal)
 
-```bash
+From the project root:
+
+1. **Create virtual environment**
+   ```powershell
+   py -3.11 -m venv .venv
+   ```
+
+2. **Activate virtual environment**
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+3. **Install dependencies**
+   ```powershell
+   python -m pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+4. **Install package in editable mode**
+   ```powershell
+   pip install -e .
+   ```
+
+Editable install is recommended so `python -m altinet.main ...` works reliably from terminal and PyCharm run configurations.
+
+---
+
+## OpenAI key setup (only for OpenAI commands)
+
+Create a `.env` file in the project root:
+
+```env
 OPENAI_API_KEY=your_api_key_here
 ```
 
-2. Decide with default mock engine:
+The following commands require `OPENAI_API_KEY`:
+- `decide ... --engine openai`
+- `analyse-room-image ...`
 
-```bash
-python -m altinet.main decide examples/sample_house_state.json
+Other commands work without an OpenAI key.
+
+---
+
+## Running tests
+
+From project root (with `.venv` active):
+
+```powershell
+pytest
 ```
 
-3. Decide with OpenAI engine:
+---
 
-```bash
+## Running the demos
+
+Use these commands from the repository root. All examples below assume your virtual environment is active and package is installed editable.
+
+### 0) Basic CLI run
+
+```powershell
+python -m altinet.main
+```
+
+Expected behavior:
+- Prints: `Altinet LocalNode running`
+
+---
+
+### 1) Contextualise
+
+```powershell
+python -m altinet.main contextualise --sample-path examples/sample_house_state.json
+```
+
+Optional events:
+
+```powershell
+python -m altinet.main contextualise --sample-path examples/sample_house_state.json --event "Motion detected in hallway" --event "Front door opened"
+```
+
+Expected behavior:
+- Prints a natural-language summary of house state (time, occupants, room context, etc.).
+
+Uses:
+- `examples/sample_house_state.json`
+
+---
+
+### 2) Build prompt
+
+```powershell
+python -m altinet.main build-prompt examples/sample_house_state.json
+```
+
+Optional events:
+
+```powershell
+python -m altinet.main build-prompt examples/sample_house_state.json --event "Elliot entered bedroom" --event "Lights are off"
+```
+
+Expected behavior:
+- Prints the full decision prompt including system role, context block, action set, and required JSON response format.
+
+Uses:
+- `examples/sample_house_state.json`
+
+---
+
+### 3) Decide (mock engine)
+
+```powershell
+python -m altinet.main decide examples/sample_house_state.json --engine mock_engine
+```
+
+(`--engine mock_engine` is optional; it is the default.)
+
+Expected behavior:
+- Prints JSON decision output from local mock logic (for example selected action and confidence).
+- No API key required.
+
+Uses:
+- `examples/sample_house_state.json`
+
+---
+
+### 4) Decide (OpenAI engine)
+
+```powershell
 python -m altinet.main decide examples/sample_house_state.json --engine openai
 ```
 
-The OpenAI engine sends the prompt generated by `src/altinet/decision/prompt_builder.py`, requires JSON output, and validates it with Pydantic `DecisionResponse`.
+Expected behavior:
+- Builds prompt from house state, sends to OpenAI, validates response, prints JSON decision.
+- If key/model/config is missing, prints a `Decision error: ...` message.
 
+Requires:
+- `OPENAI_API_KEY`
 
-## Perception camera capture test
+Uses:
+- `examples/sample_house_state.json`
 
-Capture one frame from your laptop webcam and save it for later VLM analysis:
+---
 
-```bash
+### 5) Capture room (webcam)
+
+```powershell
 python -m altinet.main capture-room
 ```
 
-Behavior:
-- Saves the latest frame to `data/captures/latest.jpg`
-- Opens a short preview window when GUI display is available
-- Gracefully reports when no camera is found or readable
+Expected behavior:
+- Tries to capture one frame from the default webcam.
+- On success: saves image to `data/captures/latest.jpg` and prints `Capture complete: ...`
+- On failure (no camera/busy camera): prints `Capture skipped: ...`
 
-This command only captures/saves an image locally and does not call OpenAI Vision.
+Requires:
+- Webcam access
 
+Creates/uses:
+- `data/captures/latest.jpg` (created at runtime)
 
-## OpenAI vision room context extraction
+---
 
-Analyse a captured room image with a vision-capable OpenAI model:
+### 6) Analyse room image (OpenAI Vision)
 
-```bash
+If you already ran `capture-room`:
+
+```powershell
 python -m altinet.main analyse-room-image data/captures/latest.jpg
 ```
 
-Behavior:
-- Calls OpenAI Vision only when this command is explicitly run
-- Validates the returned JSON with Pydantic `RoomContextResponse`
-- Saves output to `data/context/latest_room_context.json`
-- Prints the saved JSON to stdout
+Or provide any local image path:
+
+```powershell
+python -m altinet.main analyse-room-image <path-to-image>
+```
+
+Expected behavior:
+- Sends image to OpenAI Vision for structured room-context extraction.
+- Saves validated JSON to `data/context/latest_room_context.json`.
+- Prints the saved JSON.
+- If OpenAI call/config fails, prints `Room context error: ...`.
+
+Requires:
+- `OPENAI_API_KEY`
+
+Uses/creates:
+- Input image path you provide
+- `data/context/latest_room_context.json` (created at runtime)
+
+---
+
+### 7) Simulate events
+
+```powershell
+python -m altinet.main simulate-events
+```
+
+Expected behavior:
+- Simulates events (e.g., resident entering bedroom at 8:00 PM).
+- Processes queue + context update.
+- Prints updated context and a mock decision JSON.
+
+Uses:
+- `examples/sample_house_state.json`
+
+---
+
+### 8) Memory demo
+
+```powershell
+python -m altinet.main memory-demo
+```
+
+Expected behavior:
+- Seeds sample episodic memories.
+- Retrieves and prints ranked relevant memories for a sample context.
+
+---
+
+### 9) Runtime loop
+
+Basic bounded run:
+
+```powershell
+python -m altinet.main runtime --sample-path examples/sample_house_state.json --tick-rate 1.0 --max-ticks 5
+```
+
+Expected behavior:
+- Runs the runtime loop.
+- Stops after max ticks (if provided).
+- Prints summary like: `Runtime stopped after X ticks; events=...; decisions=...; errors=...`
+
+Uses:
+- `examples/sample_house_state.json`
+
+---
+
+## Demo requirements at a glance
+
+- **Needs `OPENAI_API_KEY`**:
+  - `decide ... --engine openai`
+  - `analyse-room-image ...`
+
+- **Needs webcam**:
+  - `capture-room`
+
+- **No OpenAI/webcam required**:
+  - basic CLI run
+  - `contextualise`
+  - `build-prompt`
+  - `decide ... --engine mock_engine`
+  - `simulate-events`
+  - `memory-demo`
+  - `runtime`
+
+---
+
+## Troubleshooting (Windows + PyCharm)
+
+### `ModuleNotFoundError: No module named 'altinet'`
+
+Fix:
+1. Ensure virtualenv is active.
+2. Run editable install again:
+   ```powershell
+   pip install -e .
+   ```
+3. In PyCharm, confirm the selected interpreter is the project `.venv`.
+
+### `python` or `py` points to wrong version
+
+Fix:
+- Verify versions:
+  ```powershell
+  py -0p
+  python --version
+  ```
+- Recreate `.venv` with Python 3.11+ and reselect interpreter in PyCharm.
+
+### `OPENAI_API_KEY` not found / OpenAI command fails
+
+Fix:
+1. Ensure `.env` exists in project root.
+2. Ensure key name is exactly `OPENAI_API_KEY`.
+3. Restart PyCharm terminal/run config after editing `.env`.
+
+### Webcam errors (`capture-room` skipped)
+
+Common causes:
+- Camera in use by Zoom/Teams/Browser
+- Windows privacy camera permission denied
+- External camera not initialized
+
+Fix:
+1. Close other apps using camera.
+2. Windows Settings → Privacy & security → Camera → allow desktop app access.
+3. Retry command.
+
+### `opencv-python` install/import issues
+
+Fix:
+```powershell
+python -m pip install --upgrade pip
+pip install --force-reinstall opencv-python
+```
+
+### PyCharm test discovery issues
+
+Fix:
+1. Set **Default test runner** to `pytest` (Settings → Tools → Python Integrated Tools).
+2. Run tests from project root.
+3. Ensure interpreter is `.venv` and dependencies are installed.
