@@ -93,3 +93,12 @@ def test_analyse_room_image_command_saves_context(monkeypatch, tmp_path, capsys)
     out_file = tmp_path / "latest_room_context.json"
     assert out_file.exists()
     assert '"room_type_guess": "bedroom"' in out_file.read_text(encoding="utf-8")
+
+
+def test_simulate_events_command_prints_decision(capsys):
+    main(["simulate-events"])
+    captured = capsys.readouterr()
+
+    assert "Simulated event: Elliot enters bedroom at 8:00 PM" in captured.out
+    assert "Mock decision:" in captured.out
+    assert '"selected_action": "turn_light_on"' in captured.out
