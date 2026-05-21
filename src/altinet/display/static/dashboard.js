@@ -15,19 +15,6 @@ function extractResidents(data) {
   return safeArray(data?.residents, []).map((r) => r?.name || 'Resident');
 }
 
-function ahlanLocalReply(text) {
-  const normalized = (text || '').trim();
-  const lower = normalized.toLowerCase();
-  if (lower.startsWith('my name is')) {
-    const name = normalized.slice(10).trim() || 'there';
-    return `Thanks ${name}. I can use that to help build your profile once profile learning is enabled.`;
-  }
-  if (lower.includes('light') && (lower.includes('like') || lower.includes('prefer'))) {
-    return 'Noted as a possible lighting preference. In a later step I can ask to save this to your profile.';
-  }
-  return 'Got it. I can help manage the home and track preferences once profile learning is enabled.';
-}
-
 function renderAssistantMessages() {
   const chat = document.getElementById('assistant-chat');
   if (!chat) return;
@@ -44,10 +31,36 @@ function appendAssistantMessage(role, content) {
 async function loadUsers() {
   const response = await fetch('/api/users');
   const users = await response.json();
+  window.__loadedUsers = users;
   const residentsEl = document.getElementById('residents-list');
   if (residentsEl) {
     residentsEl.innerHTML = users.map((u) => `<li>${u.display_name} · ${u.role} · ${u.access_level} · status: active</li>`).join('') || '<li>No users yet.</li>';
   }
+}
+
+
+function selectedUserId() {
+  const first = (window.__loadedUsers || [])[0];
+  return first?.id || null;
+}
+
+function renderSuggestedUpdates(updates) {
+  const panel = document.getElementById('assistant-suggestions');
+  if (!panel) return;
+  if (!updates || updates.length === 0) {
+    panel.innerHTML = '';
+    return;
+  }
+  panel.innerHTML = `<strong>AHLAN thinks it learned something</strong>${updates.map((u) => `<div class="suggestion-item">${u.type}: ${u.summary} (${Math.round((u.confidence || 0) * 100)}%)</div>`).join('')}`;
+}
+
+async function sendAssistantMessage(text) {
+  const response = await fetch('/api/assistant/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: text, user_id: selectedUserId() }),
+  });
+  return response.json();
 }
 
 function roomForEntity(entity, index) {
@@ -121,13 +134,21 @@ setInterval(refreshState, 2000);
 
 loadUsers();
 
-document.getElementById('assistant-send')?.addEventListener('click', () => {
+document.getElementById('assistant-send')?.addEventListener('click', async () => {
   const input = document.getElementById('assistant-input');
   const text = input?.value || '';
   if (!text.trim()) return;
   appendAssistantMessage('user', text.trim());
-  appendAssistantMessage('assistant', ahlanLocalReply(text));
   input.value = '';
+  try {
+    const payload = await sendAssistantMessage(text.trim());
+    appendAssistantMessage('assistant', payload.reply || 'I'm here to help.');
+    const modeEl = document.getElementById('assistant-mode');
+    if (modeEl) modeEl.textContent = payload.used_openai ? 'using OpenAI' : 'local fallback';
+    renderSuggestedUpdates(payload.suggested_profile_updates || []);
+  } catch (_error) {
+    appendAssistantMessage('assistant', 'I hit a temporary issue. Using local fallback response.');
+  }
 });
 
 const dialog = document.getElementById('add-user-dialog');

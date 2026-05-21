@@ -15,6 +15,7 @@ dependencies = [
   "pydantic",
   "pytest",
   "python-dotenv",
+  "openai",
   "opencv-python",
   "fastapi",
   "uvicorn",
