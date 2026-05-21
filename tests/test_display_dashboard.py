@@ -12,6 +12,15 @@ def test_fastapi_app_starts():
     assert "Altinet LocalNode" in response.text
 
 
+def test_dashboard_renders_template_successfully():
+    client = TestClient(create_app())
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "<title>Altinet LocalNode Dashboard</title>" in response.text
+
+
 def test_api_state_returns_json():
     client = TestClient(create_app())
     response = client.get("/api/state")
@@ -39,3 +48,15 @@ def test_missing_files_handled_gracefully(monkeypatch, tmp_path):
     capture_response = client.get("/captures/latest.jpg")
     assert capture_response.status_code == 404
     assert "No captured image" in capture_response.text
+
+
+def test_dashboard_does_not_crash_when_optional_data_files_missing(monkeypatch, tmp_path):
+    monkeypatch.setattr("altinet.display.routes.RUNTIME_STATE_PATH", tmp_path / "missing_runtime_state.json")
+    monkeypatch.setattr("altinet.display.routes.ROOM_CONTEXT_PATH", tmp_path / "missing_room_context.json")
+    monkeypatch.setattr("altinet.display.routes.CAPTURE_PATH", tmp_path / "missing.jpg")
+
+    client = TestClient(create_app())
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Altinet LocalNode" in response.text
