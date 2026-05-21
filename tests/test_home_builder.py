@@ -19,6 +19,7 @@ def test_default_demo_model_creation():
     model = create_default_home_model()
     assert model.property_boundary.width == 20
     assert model.property_boundary.depth == 30
+    assert len(model.floors) >= 2
     assert len(model.rooms) == 1
     assert len(model.walls) == 4
     assert len(model.doors) == 1
@@ -34,6 +35,19 @@ def test_save_load_home_model(tmp_path):
     assert loaded.property_name == demo.property_name
 
 
+def test_wall_room_polygon_and_pod_persistence(tmp_path):
+    path = tmp_path / 'home_model.json'
+    demo = create_default_home_model()
+    demo.walls.append({"id": "wall-extra", "room_id": None, "floor_id": "floor-1", "x1": 1, "y1": 1, "x2": 2, "y2": 2, "thickness": 0.15})
+    demo.room_regions.append({"id": "region-extra", "floor_id": "floor-1", "name": "Office", "points": [[0, 0], [2, 0], [2, 2]]})
+    demo.perception_pods.append({"id": "pod-extra", "name": "Pod X", "floor_id": "floor-1", "x": 1.5, "y": 1.5, "orientation_degrees": 10, "camera_enabled": True, "microphone_enabled": False, "sensors": ["camera"]})
+    save_home_model(demo, path)
+    loaded = load_home_model(path)
+    assert any(w.id == 'wall-extra' for w in loaded.walls)
+    assert any(r.id == 'region-extra' for r in loaded.room_regions)
+    assert any(p.id == 'pod-extra' for p in loaded.perception_pods)
+
+
 def test_api_home_returns_valid_json(monkeypatch, tmp_path):
     path = tmp_path / 'home_model.json'
     monkeypatch.setattr('altinet.display.routes.load_home_model', lambda: load_home_model(path))
@@ -46,6 +60,25 @@ def test_api_home_returns_valid_json(monkeypatch, tmp_path):
     payload = response.json()
     assert payload['property_name']
     assert payload['units'] == 'metres'
+    assert isinstance(payload['floors'], list)
+    assert 'room_regions' in payload
+    assert 'perception_pods' in payload
+
+
+def test_api_home_post_accepts_new_fields(monkeypatch, tmp_path):
+    path = tmp_path / 'home_model.json'
+    monkeypatch.setattr('altinet.display.routes.load_home_model', lambda: load_home_model(path))
+    monkeypatch.setattr('altinet.display.routes.save_home_model', lambda m: save_home_model(m, path))
+    monkeypatch.setattr('altinet.display.routes.reset_to_demo_model', lambda: save_home_model(create_default_home_model(), path))
+    client = TestClient(create_app())
+    payload = create_default_home_model().model_dump()
+    payload['room_regions'].append({"id": "region-post", "floor_id": "floor-ground", "name": "New", "points": [[0, 0], [1, 0], [1, 1]]})
+    payload['perception_pods'].append({"id": "pod-post", "name": "Pod 99", "floor_id": "floor-ground", "x": 2, "y": 2, "orientation_degrees": 0, "camera_enabled": True, "microphone_enabled": True, "sensors": ["camera"]})
+    response = client.post('/api/home', json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert any(r['id'] == 'region-post' for r in body['room_regions'])
+    assert any(p['id'] == 'pod-post' for p in body['perception_pods'])
 
 
 def test_home_builder_page_returns_200():

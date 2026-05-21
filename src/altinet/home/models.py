@@ -31,9 +31,17 @@ class Room(BaseModel):
     depth: float = Field(gt=0)
 
 
+class RoomRegion(BaseModel):
+    id: str
+    floor_id: str
+    name: str
+    points: list[list[float]] = Field(default_factory=list)
+
+
 class Wall(BaseModel):
     id: str
-    room_id: str
+    room_id: str | None = None
+    floor_id: str | None = None
     x1: float
     y1: float
     x2: float
@@ -43,8 +51,9 @@ class Wall(BaseModel):
 
 class Door(BaseModel):
     id: str
-    room_id: str
-    wall_id: str
+    room_id: str | None = None
+    wall_id: str | None = None
+    floor_id: str | None = None
     x: float
     y: float
     width: float = Field(gt=0)
@@ -62,7 +71,8 @@ class Window(BaseModel):
 
 class Light(BaseModel):
     id: str
-    room_id: str
+    room_id: str | None = None
+    floor_id: str | None = None
     name: str
     x: float
     y: float
@@ -78,6 +88,18 @@ class DevicePlacement(BaseModel):
     kind: str = "light"
 
 
+class PerceptionPodPlacement(BaseModel):
+    id: str
+    name: str
+    floor_id: str
+    x: float
+    y: float
+    orientation_degrees: float = 0
+    camera_enabled: bool = True
+    microphone_enabled: bool = True
+    sensors: list[str] = Field(default_factory=list)
+
+
 class HomeModel(BaseModel):
     property_name: str
     address: str | None = None
@@ -85,9 +107,11 @@ class HomeModel(BaseModel):
     house_dimensions: HouseDimensions
     floors: list[Floor] = Field(default_factory=list)
     rooms: list[Room] = Field(default_factory=list)
+    room_regions: list[RoomRegion] = Field(default_factory=list)
     walls: list[Wall] = Field(default_factory=list)
     doors: list[Door] = Field(default_factory=list)
     windows: list[Window] = Field(default_factory=list)
     lights: list[Light] = Field(default_factory=list)
+    perception_pods: list[PerceptionPodPlacement] = Field(default_factory=list)
     device_placements: list[DevicePlacement] = Field(default_factory=list)
     units: str = "metres"

@@ -8,8 +8,8 @@
   </head>
   <body>
     <main class="hb-shell">
-      <h1>Altinet Home Builder</h1>
-      <p>First editable home model demo.</p>
+      <h1>Altinet Floorplan Editor</h1>
+      <p>Simple interactive SVG floorplan editing prototype.</p>
       <a class="back-link" href="/">Back to Dashboard</a>
       <section class="hb-grid">
         <form id="home-form">
@@ -18,12 +18,18 @@
           <label>Boundary Depth (m) <input id="boundary_depth" type="number" step="0.1" /></label>
           <label>House Width (m) <input id="house_width" type="number" step="0.1" /></label>
           <label>House Depth (m) <input id="house_depth" type="number" step="0.1" /></label>
-          <label>Room Name <input id="room_name" /></label>
-          <label>Room Width (m) <input id="room_width" type="number" step="0.1" /></label>
-          <label>Room Depth (m) <input id="room_depth" type="number" step="0.1" /></label>
-          <div class="actions"><button type="submit">Save</button><button id="reset-demo" type="button">Reset Demo</button></div>
+          <div class="actions"><button type="submit">Save</button><button id="reset-demo" type="button">Reset Demo</button><button id="clear-floor" type="button">Clear Selected Floor</button></div>
         </form>
         <div>
+          <div class="toolbar" id="toolbar"></div>
+          <div class="toolbar-row">
+            <label>Floor
+              <select id="floor-select"></select>
+            </label>
+            <button id="add-floor" type="button">+ Add Floor</button>
+            <button id="finish-room" type="button">Finish Room</button>
+            <span id="mode-status"></span>
+          </div>
           <svg id="floorplan" viewBox="0 0 700 450"></svg>
           <pre id="json-preview"></pre>
         </div>
