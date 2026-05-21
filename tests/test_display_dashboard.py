@@ -60,3 +60,12 @@ def test_dashboard_does_not_crash_when_optional_data_files_missing(monkeypatch, 
 
     assert response.status_code == 200
     assert "Altinet LocalNode" in response.text
+
+
+def test_dashboard_contains_home_builder_navigation_links():
+    client = TestClient(create_app())
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert '/home-builder' in response.text
+    assert 'Edit Home / Floorplan' in response.text

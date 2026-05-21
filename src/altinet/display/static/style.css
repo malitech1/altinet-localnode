@@ -66,3 +66,10 @@ body {
   .sidebar-right { grid-column: 1 / -1; }
   .bottom-cards { grid-template-columns: repeat(2, 1fr); }
 }
+
+.nav-list a { color: inherit; text-decoration: none; display: block; }
+.nav-list li:hover { background: rgba(66,216,255,0.08); }
+.builder-cta { padding: 14px 16px; }
+.builder-cta p { color: var(--muted); margin-top: 6px; }
+.builder-link { display: inline-block; margin-top: 8px; padding: 10px 14px; border-radius: 10px; text-decoration: none; color: var(--text); border: 1px solid rgba(72,242,163,.45); background: rgba(72,242,163,.15); font-weight: 600; }
+.builder-link:hover { background: rgba(72,242,163,.24); }

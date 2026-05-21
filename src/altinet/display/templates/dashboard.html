@@ -12,11 +12,15 @@
         <h1>Altinet LocalNode</h1>
         <nav>
           <ul class="nav-list">
-            <li class="active">Overview</li>
-            <li>Runtime</li>
-            <li>Perception</li>
-            <li>Agents</li>
-            <li>Energy</li>
+            <li class="active"><a href="/">Home</a></li>
+            <li><a href="#floorplan">Floorplan</a></li>
+            <li><a href="/home-builder">Home Builder</a></li>
+            <li><a href="#agents">Agents</a></li>
+            <li><a href="#appliances">Appliances</a></li>
+            <li><a href="#residents">Residents</a></li>
+            <li><a href="#decisions">Decisions</a></li>
+            <li><a href="#alerts">Alerts</a></li>
+            <li><a href="#settings">Settings</a></li>
           </ul>
         </nav>
         <section class="mini-card">
@@ -39,7 +43,7 @@
           <p id="weather-placeholder">72°F · Clear skies (placeholder)</p>
         </section>
 
-        <section class="panel floorplan-panel">
+        <section class="panel floorplan-panel" id="floorplan">
           <h3>Floorplan</h3>
           <div class="floorplan-grid" id="floorplan-grid"></div>
           <div class="legend-row">
@@ -47,6 +51,12 @@
             <span><i class="dot device"></i>Device</span>
             <span><i class="dot agent"></i>Agent</span>
           </div>
+        </section>
+
+        <section class="panel builder-cta">
+          <h3>Edit Home / Floorplan</h3>
+          <p>Open the Home Builder to update your home layout and floorplan details.</p>
+          <a class="builder-link" href="/home-builder">Edit Home / Floorplan</a>
         </section>
 
         <section class="bottom-cards" id="bottom-cards"></section>

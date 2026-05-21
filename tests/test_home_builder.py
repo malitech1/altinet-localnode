@@ -52,3 +52,12 @@ def test_home_builder_page_returns_200():
     client = TestClient(create_app())
     response = client.get('/home-builder')
     assert response.status_code == 200
+
+
+def test_home_builder_contains_back_to_dashboard_link():
+    client = TestClient(create_app())
+    response = client.get("/home-builder")
+
+    assert response.status_code == 200
+    assert 'href="/"' in response.text
+    assert 'Back to Dashboard' in response.text
