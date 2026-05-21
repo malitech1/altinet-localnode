@@ -1,3 +1,4 @@
+from pathlib import Path
 from fastapi.testclient import TestClient
 
 from altinet.display.routes import CAPTURE_PATH, ROOM_CONTEXT_PATH, RUNTIME_STATE_PATH
@@ -102,4 +103,9 @@ def test_dashboard_contains_user_list_and_seed_button():
 
     assert response.status_code == 200
     assert "id=\"residents-list\"" in response.text
-    assert "Seed Demo Users" in response.text
+    assert "id=\"seed-demo-users-button\"" in response.text
+
+
+def test_dashboard_js_references_seed_demo_users_button():
+    js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
+    assert "seed-demo-users-button" in js

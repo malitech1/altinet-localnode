@@ -629,6 +629,8 @@ Planned next steps include OpenAI-powered conversation, preference extraction, a
 1. Run the dashboard:
    - `uvicorn altinet.display.app:create_app --reload`
 2. Open `http://127.0.0.1:8000`.
-3. In **Residents / Users**, click **Seed Demo Users**.
-4. Demo users should appear in the Residents / Users card immediately.
-5. User profiles are stored in `data/altinet/users/users.json`.
+3. Before seeding, open `http://127.0.0.1:8000/api/users` and confirm the list is empty or missing demo users.
+4. In **Residents / Users**, click **Seed Demo Users**.
+5. Open `http://127.0.0.1:8000/api/users` again and confirm demo users (including `Elliot`) are present.
+6. Confirm the **Residents / Users** card updates immediately and does not show "No users added yet" when users exist.
+7. User profiles are stored in `data/altinet/users/users.json`.

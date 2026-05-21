@@ -182,6 +182,7 @@ async function refreshState() {
   }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
 refreshState();
 setInterval(refreshState, 2000);
 
@@ -226,8 +227,23 @@ document.getElementById('add-user-form')?.addEventListener('submit', async (even
   loadUsers();
 });
 
-
-document.getElementById('seed-demo-users')?.addEventListener('click', async () => {
-  await fetch('/api/registry/seed-demo', { method: 'POST' });
-  await loadUsers();
+const seedButton = document.getElementById('seed-demo-users-button');
+const dashboardStatusEl = document.getElementById('dashboard-status');
+seedButton?.addEventListener('click', async () => {
+  console.log('Seed demo users button clicked');
+  if (dashboardStatusEl) dashboardStatusEl.textContent = 'Seeding demo users...';
+  seedButton.disabled = true;
+  try {
+    const response = await fetch('/api/registry/seed-demo', { method: 'POST' });
+    if (!response.ok) throw new Error(`Seed API failed (${response.status})`);
+    const payload = await response.json();
+    if (dashboardStatusEl) dashboardStatusEl.textContent = payload.message || 'Demo data seeded';
+    await loadUsers();
+  } catch (error) {
+    console.error('Failed to seed demo users', error);
+    if (dashboardStatusEl) dashboardStatusEl.textContent = `Failed to seed demo users: ${error.message}`;
+  } finally {
+    seedButton.disabled = false;
+  }
+});
 });
