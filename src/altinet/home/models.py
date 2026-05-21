@@ -47,6 +47,9 @@ class Wall(BaseModel):
     x2: float
     y2: float
     thickness: float = Field(default=0.15, gt=0)
+    wall_type: Literal["external", "internal"] = "internal"
+    thickness_mm: float | None = Field(default=None, gt=0)
+    material: str | None = None
 
 
 class Door(BaseModel):

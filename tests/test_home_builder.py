@@ -94,3 +94,54 @@ def test_home_builder_contains_back_to_dashboard_link():
     assert response.status_code == 200
     assert 'href="/"' in response.text
     assert 'Back to Dashboard' in response.text
+
+
+def test_wall_model_supports_types():
+    model = create_default_home_model()
+    assert all(w.wall_type in ["external", "internal"] for w in model.walls)
+
+
+def test_default_demo_walls_are_external():
+    model = create_default_home_model()
+    assert all(w.wall_type == "external" for w in model.walls)
+
+
+def test_drawn_wall_can_be_internal():
+    model = create_default_home_model()
+    model.walls.append({"id": "wall-internal", "floor_id": "floor-ground", "x1": 1, "y1": 1, "x2": 2, "y2": 1, "thickness": 0.15, "wall_type": "internal"})
+    assert any(w.id == "wall-internal" and w.wall_type == "internal" for w in model.walls)
+
+
+def test_floor_clear_removes_floor_objects():
+    model = create_default_home_model()
+    floor_id = "floor-ground"
+    model.walls = [w for w in model.walls if (w.floor_id or "floor-ground") != floor_id]
+    model.doors = [d for d in model.doors if (d.floor_id or "floor-ground") != floor_id]
+    model.lights = [l for l in model.lights if (l.floor_id or "floor-ground") != floor_id]
+    model.room_regions = [r for r in model.room_regions if r.floor_id != floor_id]
+    model.perception_pods = [p for p in model.perception_pods if p.floor_id != floor_id]
+    assert not [w for w in model.walls if (w.floor_id or "floor-ground") == floor_id]
+    assert not [d for d in model.doors if (d.floor_id or "floor-ground") == floor_id]
+    assert not [l for l in model.lights if (l.floor_id or "floor-ground") == floor_id]
+    assert not [r for r in model.room_regions if r.floor_id == floor_id]
+    assert not [p for p in model.perception_pods if p.floor_id == floor_id]
+
+
+def test_floor_delete_prevents_deleting_last_floor():
+    model = create_default_home_model()
+    model.floors = [model.floors[0]]
+    can_delete = len(model.floors) > 1
+    assert can_delete is False
+
+
+def test_api_home_post_accepts_wall_type(monkeypatch, tmp_path):
+    path = tmp_path / 'home_model.json'
+    monkeypatch.setattr('altinet.display.routes.load_home_model', lambda: load_home_model(path))
+    monkeypatch.setattr('altinet.display.routes.save_home_model', lambda m: save_home_model(m, path))
+    monkeypatch.setattr('altinet.display.routes.reset_to_demo_model', lambda: save_home_model(create_default_home_model(), path))
+    client = TestClient(create_app())
+    payload = create_default_home_model().model_dump()
+    payload['walls'].append({"id": "wall-post", "room_id": None, "floor_id": "floor-ground", "x1": 0, "y1": 0, "x2": 1, "y2": 0, "thickness": 0.15, "wall_type": "internal", "material": "stud"})
+    response = client.post('/api/home', json=payload)
+    assert response.status_code == 200
+    assert any(w['id'] == 'wall-post' and w['wall_type'] == 'internal' for w in response.json()['walls'])

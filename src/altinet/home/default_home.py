@@ -16,10 +16,10 @@ from altinet.home.models import (
 def create_default_home_model() -> HomeModel:
     room = Room(id="room-demo", floor_id="floor-ground", name="Demo Room", x=0.0, y=0.0, width=6.0, depth=4.0)
     walls = [
-        Wall(id="wall-north", room_id=room.id, floor_id=room.floor_id, x1=0.0, y1=0.0, x2=6.0, y2=0.0),
-        Wall(id="wall-east", room_id=room.id, floor_id=room.floor_id, x1=6.0, y1=0.0, x2=6.0, y2=4.0),
-        Wall(id="wall-south", room_id=room.id, floor_id=room.floor_id, x1=6.0, y1=4.0, x2=0.0, y2=4.0),
-        Wall(id="wall-west", room_id=room.id, floor_id=room.floor_id, x1=0.0, y1=4.0, x2=0.0, y2=0.0),
+        Wall(id="wall-north", room_id=room.id, floor_id=room.floor_id, x1=0.0, y1=0.0, x2=6.0, y2=0.0, wall_type="external"),
+        Wall(id="wall-east", room_id=room.id, floor_id=room.floor_id, x1=6.0, y1=0.0, x2=6.0, y2=4.0, wall_type="external"),
+        Wall(id="wall-south", room_id=room.id, floor_id=room.floor_id, x1=6.0, y1=4.0, x2=0.0, y2=4.0, wall_type="external"),
+        Wall(id="wall-west", room_id=room.id, floor_id=room.floor_id, x1=0.0, y1=4.0, x2=0.0, y2=0.0, wall_type="external"),
     ]
     light = Light(id="light-demo-1", room_id=room.id, floor_id=room.floor_id, name="Demo Ceiling Light", x=3.0, y=2.0)
     return HomeModel(
