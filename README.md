@@ -141,6 +141,19 @@ Troubleshooting webcam permissions (Windows):
 - Access Home Builder from the left sidebar (**Home Builder**) or the **Edit Home / Floorplan** button on the dashboard.
 - Home Builder URL: `/home-builder`.
 
+## Floorplan Editor controls
+
+- **Select object**: choose **Select** mode, then click walls, rooms, doors, windows, lights, or perception pods.
+- **Edit object properties**: after selecting an object, use the **Selected ...** panel and click **Apply Changes**.
+- **Delete object**:
+  - Use **Erase** mode and click an object, or
+  - Select an object in **Select** mode and click **Delete Selected**.
+- **Define Room / Finish Room / Cancel Room**:
+  - Use **Define Room** mode and click at least 3 points to draft a room.
+  - Click **Finish Room** to save the room polygon.
+  - Click **Cancel Room** to discard only the unfinished room draft.
+- **Escape key**: when room drafting is active, press **Escape** to cancel unfinished room points.
+
 ---
 
 ## Dashboard floorplan note

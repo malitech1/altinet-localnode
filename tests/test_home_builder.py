@@ -139,3 +139,30 @@ def test_api_returns_lights_and_perception_pods(monkeypatch, tmp_path):
 
     assert any(light["id"] == "light-api" for light in body["lights"])
     assert any(pod["id"] == "pod-api" for pod in body["perception_pods"])
+
+
+def test_delete_light_and_pod_from_model_collections():
+    model = create_default_home_model()
+    model.lights.append({"id": "light-del", "room_id": None, "floor_id": "floor-ground", "name": "Delete Me", "x": 2.0, "y": 2.0, "type": "ceiling"})
+    model.perception_pods.append({"id": "pod-del", "name": "Delete Me", "floor_id": "floor-ground", "x": 2.5, "y": 2.5, "orientation_degrees": 0.0, "camera_enabled": True, "microphone_enabled": True, "sensors": ["camera", "microphone"]})
+
+    model.lights = [light for light in model.lights if light.id != "light-del"]
+    model.perception_pods = [pod for pod in model.perception_pods if pod.id != "pod-del"]
+
+    assert all(light.id != "light-del" for light in model.lights)
+    assert all(pod.id != "pod-del" for pod in model.perception_pods)
+
+
+def test_door_window_fields_preserved_after_save_load(tmp_path):
+    path = tmp_path / "home_model.json"
+    model = create_default_home_model()
+    model.doors[0].swing_direction = "left"
+    model.doors[0].type = "hinged"
+    model.windows.append({"id": "window-extra", "room_id": None, "wall_id": "wall-east", "floor_id": "floor-ground", "x": 6.0, "y": 1.0, "width": 1.1, "width_m": 1.1, "position_along_wall_m": 1.0, "height_m": 1.4, "type": "casement"})
+
+    save_home_model(model, path)
+    loaded = load_home_model(path)
+
+    assert loaded.doors[0].swing_direction == "left"
+    assert loaded.doors[0].type == "hinged"
+    assert any(window.id == "window-extra" and window.height_m == 1.4 and window.type == "casement" for window in loaded.windows)
