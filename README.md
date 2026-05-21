@@ -57,7 +57,7 @@ altinet-localnode/
 From project root:
 
 ```bash
-python -m src.altinet.main
+python -m altinet.main
 ```
 
 Expected output:
@@ -78,13 +78,13 @@ pytest
 Run the contextualiser CLI with the provided sample state:
 
 ```bash
-python -m src.altinet.main contextualise --sample-path examples/sample_house_state.json
+python -m altinet.main contextualise --sample-path examples/sample_house_state.json
 ```
 
 Optional: include recent events (repeat `--event`):
 
 ```bash
-python -m src.altinet.main contextualise --sample-path examples/sample_house_state.json --event "Motion detected in hallway" --event "Front door opened"
+python -m altinet.main contextualise --sample-path examples/sample_house_state.json --event "Motion detected in hallway" --event "Front door opened"
 ```
 
 This prints a natural-language context block suitable for decision-model input.
@@ -126,3 +126,18 @@ Behavior:
 - Gracefully reports when no camera is found or readable
 
 This command only captures/saves an image locally and does not call OpenAI Vision.
+
+
+## OpenAI vision room context extraction
+
+Analyse a captured room image with a vision-capable OpenAI model:
+
+```bash
+python -m altinet.main analyse-room-image data/captures/latest.jpg
+```
+
+Behavior:
+- Calls OpenAI Vision only when this command is explicitly run
+- Validates the returned JSON with Pydantic `RoomContextResponse`
+- Saves output to `data/context/latest_room_context.json`
+- Prints the saved JSON to stdout

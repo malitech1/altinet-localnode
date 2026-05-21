@@ -64,3 +64,32 @@ def test_capture_room_command_reports_missing_camera(monkeypatch, capsys):
 
     assert "Capture skipped:" in captured.out
     assert "No camera detected" in captured.out
+
+
+def test_analyse_room_image_command_saves_context(monkeypatch, tmp_path, capsys):
+    from altinet.context.schemas import RoomContextResponse
+
+    image_path = tmp_path / "latest.jpg"
+    image_path.write_bytes(b"fake")
+
+    monkeypatch.setattr(
+        "altinet.main.analyse_room_image_with_openai",
+        lambda _path: RoomContextResponse(
+            room_type_guess="bedroom",
+            visible_people=["adult"],
+            visible_pets=[],
+            lights_on=True,
+            notable_objects=["bed", "lamp"],
+            safety_concerns=[],
+            summary="A tidy bedroom with one visible adult.",
+        ),
+    )
+    monkeypatch.setattr("altinet.main.DEFAULT_ROOM_CONTEXT_OUTPUT_PATH", tmp_path / "latest_room_context.json")
+
+    main(["analyse-room-image", str(image_path)])
+    captured = capsys.readouterr()
+
+    assert "Room context saved to" in captured.out
+    out_file = tmp_path / "latest_room_context.json"
+    assert out_file.exists()
+    assert '"room_type_guess": "bedroom"' in out_file.read_text(encoding="utf-8")
