@@ -75,10 +75,12 @@ class DecisionResponse(BaseModel):
 
 
 class RoomContextResponse(BaseModel):
-    room_type_guess: str
+    room_type_guess: Literal["bedroom", "kitchen", "living_room", "office", "bathroom", "unknown"]
     visible_people: list[str] = Field(default_factory=list)
     visible_pets: list[str] = Field(default_factory=list)
-    lights_on: bool | Literal["unknown"]
+    visible_devices: list[str] = Field(default_factory=list)
+    lights_on: bool | None
+    lighting_description: str
     notable_objects: list[str] = Field(default_factory=list)
     safety_concerns: list[str] = Field(default_factory=list)
     summary: str
