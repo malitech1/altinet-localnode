@@ -1,0 +1,1 @@
+"""Altinet LocalNode package."""
