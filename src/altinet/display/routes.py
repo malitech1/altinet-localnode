@@ -12,13 +12,15 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = Path("data")
+PROJECT_ROOT = BASE_DIR.parents[2]
+DATA_DIR = PROJECT_ROOT / "data"
+TEMPLATE_DIR = BASE_DIR / "templates"
 RUNTIME_STATE_PATH = DATA_DIR / "runtime" / "runtime_state.json"
 ROOM_CONTEXT_PATH = DATA_DIR / "context" / "latest_room_context.json"
 CAPTURE_PATH = DATA_DIR / "captures" / "latest.jpg"
 
 router = APIRouter()
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
 
 def _read_json(path: Path) -> dict | None:
@@ -33,7 +35,7 @@ def _read_json(path: Path) -> dict | None:
 
 @router.get("/")
 def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={})
 
 
 @router.get("/api/state")
