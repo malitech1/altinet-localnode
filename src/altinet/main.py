@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime
 from pathlib import Path
 
 from altinet.context.contextualiser import build_context_block
@@ -14,6 +15,7 @@ from altinet.decision.prompt_builder import build_decision_prompt
 from altinet.events.models import PersonEnteredRoom, TimeTick
 from altinet.events.processor import EventProcessor
 from altinet.events.queue import EventQueue
+from altinet.memory import EpisodicMemory, MemoryContext, MemorySystem
 from altinet.perception.capture import capture_room_image
 from altinet.perception.room_context import analyse_room_image_with_openai
 
@@ -100,6 +102,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Simulate a sequence of events and print contextual decision output.",
     )
 
+    subparsers.add_parser(
+        "memory-demo",
+        help="Run a simple episodic memory retrieval demo.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "contextualise":
@@ -120,6 +127,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "simulate-events":
         print(_simulate_events_demo())
+        return
+
+    if args.command == "memory-demo":
+        print(_memory_demo())
         return
 
     if args.command == "capture-room":
@@ -171,9 +182,6 @@ def _decide_from_path(sample_path: Path, *, engine: str = "mock_engine") -> str:
     return decision.model_dump_json(indent=2)
 
 
-if __name__ == "__main__":
-    main()
-
 
 def _simulate_events_demo() -> str:
     with DEFAULT_SAMPLE_PATH.open("r", encoding="utf-8") as fh:
@@ -218,3 +226,55 @@ def _simulate_events_demo() -> str:
             decision.model_dump_json(indent=2),
         ]
     )
+
+
+def _memory_demo() -> str:
+    memory_system = MemorySystem()
+
+    memory_system.add_memory(
+        EpisodicMemory(
+            event="Elliot read a bedtime story to Mia.",
+            importance=1.9,
+            timestamp=datetime(2026, 5, 20, 20, 10),
+            residents=["elliot", "mia"],
+            rooms=["bedroom"],
+            tags=["bedtime", "family", "reading"],
+        )
+    )
+    memory_system.add_memory(
+        EpisodicMemory(
+            event="A package was delivered at the front door.",
+            importance=1.2,
+            timestamp=datetime(2026, 5, 20, 14, 45),
+            residents=["elliot"],
+            rooms=["entryway"],
+            tags=["delivery", "door"],
+        )
+    )
+    memory_system.add_memory(
+        EpisodicMemory(
+            event="Mia spilled juice in the kitchen.",
+            importance=1.5,
+            timestamp=datetime(2026, 5, 20, 8, 30),
+            residents=["mia"],
+            rooms=["kitchen"],
+            tags=["cleanup", "kitchen"],
+        )
+    )
+
+    context = MemoryContext(
+        current_time=datetime(2026, 5, 21, 20, 0),
+        residents=["mia", "elliot"],
+        room="bedroom",
+        tags=["bedtime", "family"],
+    )
+
+    memories = memory_system.retrieve_relevant_memories(context)
+    lines = ["Memory demo: relevant episodic memories"]
+    for idx, memory in enumerate(memories, start=1):
+        lines.append(f"{idx}. {memory.event} (importance={memory.importance})")
+    return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    main()

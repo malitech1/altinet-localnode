@@ -102,3 +102,11 @@ def test_simulate_events_command_prints_decision(capsys):
     assert "Simulated event: Elliot enters bedroom at 8:00 PM" in captured.out
     assert "Mock decision:" in captured.out
     assert '"selected_action": "turn_light_on"' in captured.out
+
+
+def test_memory_demo_command_prints_ranked_memories(capsys):
+    main(["memory-demo"])
+    captured = capsys.readouterr()
+
+    assert "Memory demo: relevant episodic memories" in captured.out
+    assert "1. Elliot read a bedtime story to Mia." in captured.out
