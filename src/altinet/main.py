@@ -12,9 +12,13 @@ from altinet.decision.mock_engine import decide_action
 from altinet.decision.openai_engine import decide_action_with_openai
 from altinet.decision.prompt_builder import build_decision_prompt
 from altinet.perception.capture import capture_room_image
+from altinet.perception.room_context import analyse_room_image_with_openai
 
 
 DEFAULT_SAMPLE_PATH = Path("examples/sample_house_state.json")
+
+
+DEFAULT_ROOM_CONTEXT_OUTPUT_PATH = Path("data/context/latest_room_context.json")
 DEFAULT_ACTIONS = [
     PossibleAction.TURN_LIGHT_ON,
     PossibleAction.TURN_LIGHT_OFF,
@@ -77,6 +81,16 @@ def main(argv: list[str] | None = None) -> None:
         help="Capture a single image from the default webcam for perception testing.",
     )
 
+    analyse_room_image_parser = subparsers.add_parser(
+        "analyse-room-image",
+        help="Extract room context JSON from an image using OpenAI Vision.",
+    )
+    analyse_room_image_parser.add_argument(
+        "image_path",
+        type=Path,
+        help="Path to input room image, e.g. data/captures/latest.jpg.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "contextualise":
@@ -98,6 +112,18 @@ def main(argv: list[str] | None = None) -> None:
         success, message = capture_room_image()
         prefix = "Capture complete:" if success else "Capture skipped:"
         print(f"{prefix} {message}")
+        return
+
+
+    if args.command == "analyse-room-image":
+        try:
+            context = analyse_room_image_with_openai(args.image_path)
+            DEFAULT_ROOM_CONTEXT_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+            DEFAULT_ROOM_CONTEXT_OUTPUT_PATH.write_text(context.model_dump_json(indent=2), encoding="utf-8")
+            print(f"Room context saved to {DEFAULT_ROOM_CONTEXT_OUTPUT_PATH}")
+            print(context.model_dump_json(indent=2))
+        except RuntimeError as exc:
+            print(f"Room context error: {exc}")
         return
 
     print("Altinet LocalNode running")

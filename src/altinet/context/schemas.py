@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from enum import StrEnum
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -70,3 +72,13 @@ class DecisionRequest(BaseModel):
 class DecisionResponse(BaseModel):
     selected_action: PossibleAction
     rationale: str
+
+
+class RoomContextResponse(BaseModel):
+    room_type_guess: str
+    visible_people: list[str] = Field(default_factory=list)
+    visible_pets: list[str] = Field(default_factory=list)
+    lights_on: bool | Literal["unknown"]
+    notable_objects: list[str] = Field(default_factory=list)
+    safety_concerns: list[str] = Field(default_factory=list)
+    summary: str
