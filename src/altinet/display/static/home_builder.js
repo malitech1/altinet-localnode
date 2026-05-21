@@ -1,93 +1,41 @@
 let homeModel = null;
-const modeDefs = ["select", "draw_wall", "erase_wall", "define_room", "place_door", "place_light", "place_pod", "pan"];
-let mode = "select";
-let selectedFloorId = null;
-let wallStart = null;
-let previewPoint = null;
-let roomPoints = [];
-let selectedObject = null;
-
-function v(id) { return document.getElementById(id); }
-function uid(prefix) { return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`; }
-function snap(n) { return Math.round(n * 2) / 2; }
-function floorRef(id) { return id || 'floor-ground'; }
-function getSvgPoint(evt) {
-  const svg = v('floorplan');
-  const point = svg.createSVGPoint();
-  point.x = evt.clientX;
-  point.y = evt.clientY;
-  const ctm = svg.getScreenCTM();
-  if (!ctm) return { x: 0, y: 0 };
-  const p = point.matrixTransform(ctm.inverse());
-  return { x: snap((p.x - 20) / 60), y: snap((p.y - 20) / 60) };
-}
-function deleteObject(type, id) {
-  const map = { wall: 'walls', room_region: 'room_regions', door: 'doors', light: 'lights', pod: 'perception_pods' };
-  const key = map[type]; if (!key) return;
-  homeModel[key] = homeModel[key].filter((o) => o.id !== id);
-  if (selectedObject && selectedObject.id === id && selectedObject.type === type) selectedObject = null;
-}
-function renderSelectionPanel() {
-  const p = v('selection-panel');
-  if (!selectedObject) { p.textContent = 'No object selected.'; return; }
-  const extra = selectedObject.type === 'wall' ? `<div>wall_type: ${selectedObject.wall_type || 'internal'}</div>` : '';
-  p.innerHTML = `<div><strong>Selected</strong></div><div>type: ${selectedObject.type}</div><div>id: ${selectedObject.id}</div>${extra}`;
-}
-function draw() {
-  const svg = v('floorplan'); const scale = 60; const ox = 20; const oy = 20;
-  const walls = homeModel.walls.filter((w) => floorRef(w.floor_id) === selectedFloorId);
-  const lights = homeModel.lights.filter((l) => floorRef(l.floor_id) === selectedFloorId);
-  const doors = homeModel.doors.filter((d) => floorRef(d.floor_id) === selectedFloorId);
-  const pods = homeModel.perception_pods.filter((p) => p.floor_id === selectedFloorId);
-  const regions = homeModel.room_regions.filter((r) => r.floor_id === selectedFloorId);
-  const rooms = homeModel.rooms.filter((r) => r.floor_id === selectedFloorId);
-
-  let html = '<defs><pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M 30 0 L 0 0 0 30" fill="none" stroke="#1e293b" stroke-width="1"/></pattern></defs><rect x="0" y="0" width="700" height="450" fill="url(#grid)"/>';
-  regions.forEach((r) => { const points = r.points.map((p) => `${ox + p[0] * scale},${oy + p[1] * scale}`).join(' '); html += `<polygon data-type="room_region" data-id="${r.id}" points="${points}" fill="#1d4ed822" stroke="#60a5fa" stroke-width="1.5"/>`; });
-  rooms.forEach((r) => { html += `<rect x="${ox+r.x*scale}" y="${oy+r.y*scale}" width="${r.width*scale}" height="${r.depth*scale}" fill="none" stroke="#334155" stroke-dasharray="4 4" />`; });
-  walls.forEach((w) => {
-    const external = (w.wall_type || 'internal') === 'external';
-    const selected = selectedObject?.type === 'wall' && selectedObject.id === w.id;
-    html += `<line data-type="wall" data-id="${w.id}" x1="${ox + w.x1 * scale}" y1="${oy + w.y1 * scale}" x2="${ox + w.x2 * scale}" y2="${oy + w.y2 * scale}" stroke="${selected ? '#f43f5e' : (external ? '#f8fafc' : '#94a3b8')}" stroke-width="${external ? 8 : 5}"/>`;
-  });
-  doors.forEach((d) => { html += `<rect data-type="door" data-id="${d.id}" x="${ox + d.x * scale}" y="${oy + d.y * scale}" width="${d.width * scale}" height="6" fill="#22d3ee"/>`; });
-  lights.forEach((l) => { html += `<circle data-type="light" data-id="${l.id}" cx="${ox + l.x * scale}" cy="${oy + l.y * scale}" r="7" fill="#facc15"/>`; });
-  pods.forEach((p) => { html += `<circle data-type="pod" data-id="${p.id}" cx="${ox + p.x * scale}" cy="${oy + p.y * scale}" r="8" fill="#86efac"/>`; });
-  if (wallStart && previewPoint) html += `<line x1="${ox + wallStart.x * scale}" y1="${oy + wallStart.y * scale}" x2="${ox + previewPoint.x * scale}" y2="${oy + previewPoint.y * scale}" stroke="#f97316" stroke-width="3" stroke-dasharray="6 4"/>`;
-  if (roomPoints.length) html += `<polyline points="${roomPoints.map((p) => `${ox + p[0] * scale},${oy + p[1] * scale}`).join(' ')}" fill="none" stroke="#a78bfa" stroke-width="2"/>`;
-  svg.innerHTML = html;
-  v('wall-type-select').style.display = mode === 'draw_wall' ? 'inline-block' : 'none';
-  v('mode-status').textContent = `Mode: ${mode}`;
-  v('json-preview').textContent = JSON.stringify(homeModel, null, 2);
-  renderSelectionPanel();
-}
-function handleSvgClick(evt) {
-  const type = evt.target?.dataset?.type; const id = evt.target?.dataset?.id;
-  if (mode === 'erase_wall' && type && id) { deleteObject(type, id); draw(); return; }
-  if (mode === 'select') { selectedObject = type && id ? (homeModel.walls.concat(homeModel.room_regions, homeModel.doors, homeModel.lights, homeModel.perception_pods).find((o) => o.id === id) ? { ...homeModel.walls.concat(homeModel.room_regions, homeModel.doors, homeModel.lights, homeModel.perception_pods).find((o) => o.id === id), type } : null) : null; draw(); return; }
-  const p = getSvgPoint(evt);
-  if (mode === 'draw_wall') {
-    if (!wallStart) wallStart = p;
-    else { homeModel.walls.push({ id: uid('wall'), room_id: null, floor_id: selectedFloorId, x1: wallStart.x, y1: wallStart.y, x2: p.x, y2: p.y, thickness: 0.15, wall_type: v('wall-type-select').value }); wallStart = null; previewPoint = null; }
-  } else if (mode === 'define_room') roomPoints.push([p.x, p.y]);
-  else if (mode === 'place_light') homeModel.lights.push({ id: uid('light'), room_id: null, floor_id: selectedFloorId, name: `Light ${homeModel.lights.length + 1}`, x: p.x, y: p.y, type: 'ceiling' });
-  else if (mode === 'place_door') homeModel.doors.push({ id: uid('door'), room_id: null, wall_id: null, floor_id: selectedFloorId, x: p.x, y: p.y, width: 0.9, swing_degrees: 90 });
-  else if (mode === 'place_pod') homeModel.perception_pods.push({ id: uid('pod'), name: `Pod ${homeModel.perception_pods.length + 1}`, floor_id: selectedFloorId, x: p.x, y: p.y, orientation_degrees: 0, camera_enabled: true, microphone_enabled: true, sensors: ['camera', 'microphone'] });
-  draw();
-}
-function finishRoom() { if (roomPoints.length < 3) return; homeModel.room_regions.push({ id: uid('region'), floor_id: selectedFloorId, name: `Room ${homeModel.room_regions.length + 1}`, points: roomPoints }); roomPoints = []; draw(); }
-function initToolbar() { const toolbar = v('toolbar'); const labels = { select: 'Select', draw_wall: 'Draw Wall', erase_wall: 'Erase', define_room: 'Define Room', place_door: 'Place Door', place_light: 'Place Light', place_pod: 'Place Perception Pod', pan: 'Pan/Move' }; toolbar.innerHTML = modeDefs.map((m) => `<button type="button" data-mode="${m}">${labels[m]}</button>`).join(''); toolbar.addEventListener('click', (e) => { const m = e.target?.dataset?.mode; if (!m) return; mode = m; wallStart = null; previewPoint = null; [...toolbar.querySelectorAll('button')].forEach((b) => b.classList.toggle('active', b.dataset.mode === mode)); draw(); }); toolbar.querySelector('button').classList.add('active'); }
-async function refresh() { const res = await fetch('/api/home'); homeModel = await res.json(); if (!homeModel.room_regions) homeModel.room_regions = []; if (!homeModel.perception_pods) homeModel.perception_pods = []; selectedFloorId = homeModel.floors[0]?.id; Object.values(homeModel.walls).forEach((w) => { if (!w.wall_type) w.wall_type = 'internal'; }); fillForm(homeModel); renderFloorSelect(); draw(); }
-function mapFormToModel(model) { model.property_name = v('property_name').value; model.property_boundary.width = Number(v('boundary_width').value); model.property_boundary.depth = Number(v('boundary_depth').value); model.house_dimensions.width = Number(v('house_width').value); model.house_dimensions.depth = Number(v('house_depth').value); }
-function fillForm(model) { v('property_name').value = model.property_name; v('boundary_width').value = model.property_boundary.width; v('boundary_depth').value = model.property_boundary.depth; v('house_width').value = model.house_dimensions.width; v('house_depth').value = model.house_dimensions.depth; }
-function renderFloorSelect() { const select = v('floor-select'); select.innerHTML = homeModel.floors.map((f) => `<option value="${f.id}">${f.name}</option>`).join(''); select.value = selectedFloorId; }
-v('home-form').addEventListener('submit', async (e) => { e.preventDefault(); mapFormToModel(homeModel); const res = await fetch('/api/home', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(homeModel) }); homeModel = await res.json(); draw(); });
-v('clear-floor').addEventListener('click', () => { if (!window.confirm('Clear all objects on selected floor?')) return; homeModel.walls = homeModel.walls.filter((w) => floorRef(w.floor_id) !== selectedFloorId); homeModel.doors = homeModel.doors.filter((d) => floorRef(d.floor_id) !== selectedFloorId); homeModel.lights = homeModel.lights.filter((l) => floorRef(l.floor_id) !== selectedFloorId); homeModel.room_regions = homeModel.room_regions.filter((r) => r.floor_id !== selectedFloorId); homeModel.perception_pods = homeModel.perception_pods.filter((p) => p.floor_id !== selectedFloorId); selectedObject = null; draw(); });
-v('delete-floor').addEventListener('click', () => { if (homeModel.floors.length <= 1) { window.alert('Cannot delete the final floor.'); return; } if (!window.confirm('Delete selected floor and all its objects?')) return; homeModel.floors = homeModel.floors.filter((f) => f.id !== selectedFloorId); v('clear-floor').click(); selectedFloorId = homeModel.floors[0].id; renderFloorSelect(); draw(); });
-v('delete-selected').addEventListener('click', () => { if (!selectedObject) return; deleteObject(selectedObject.type, selectedObject.id); draw(); });
-v('add-floor').addEventListener('click', () => { const level = homeModel.floors.length; const id = uid('floor'); homeModel.floors.push({ id, name: `Floor ${level}`, level }); selectedFloorId = id; renderFloorSelect(); draw(); });
-v('floor-select').addEventListener('change', (e) => { selectedFloorId = e.target.value; wallStart = null; roomPoints = []; selectedObject = null; draw(); });
-v('finish-room').addEventListener('click', finishRoom);
-v('floorplan').addEventListener('click', handleSvgClick);
-v('floorplan').addEventListener('mousemove', (evt) => { if (mode === 'draw_wall' && wallStart) { previewPoint = getSvgPoint(evt); draw(); } });
-initToolbar(); refresh();
+const GRID_METRES = 0.5;
+const SCALE = 60;
+const OX = 40;
+const OY = 40;
+const SNAP_TOLERANCE_M = 0.6;
+const modeDefs = ["select", "draw_wall", "erase_wall", "define_room", "place_door", "place_window", "place_light", "place_pod", "pan"];
+let mode = "select", selectedFloorId = null, wallStart = null, previewPoint = null, roomPoints = [], selectedObject = null;
+const roomTypes = ["bedroom", "kitchen", "bathroom", "living_room", "office", "laundry", "hallway", "other"];
+const v=(id)=>document.getElementById(id); const uid=(p)=>`${p}-${Date.now()}-${Math.floor(Math.random()*1000)}`; const snap=(n)=>Math.round(n*2)/2; const floorRef=(id)=>id||'floor-ground';
+const m2px=(m)=>m*SCALE;
+function getSvgPoint(evt){const svg=v('floorplan');const pt=svg.createSVGPoint();pt.x=evt.clientX;pt.y=evt.clientY;const ctm=svg.getScreenCTM();if(!ctm)return{x:0,y:0};const p=pt.matrixTransform(ctm.inverse());return{x:snap((p.x-OX)/SCALE),y:snap((p.y-OY)/SCALE)};}
+function wallLen(w){return Math.hypot(w.x2-w.x1,w.y2-w.y1)}
+function wallAngle(w){return Math.atan2(w.y2-w.y1,w.x2-w.x1)*180/Math.PI}
+function nearestWall(p){let best=null,bestDist=1e9;for(const w of homeModel.walls.filter(w=>floorRef(w.floor_id)===selectedFloorId)){const dx=w.x2-w.x1,dy=w.y2-w.y1,l2=dx*dx+dy*dy;if(l2===0)continue;let t=((p.x-w.x1)*dx+(p.y-w.y1)*dy)/l2;t=Math.max(0,Math.min(1,t));const px=w.x1+t*dx,py=w.y1+t*dy;const d=Math.hypot(p.x-px,p.y-py);if(d<bestDist){bestDist=d;best={wall:w,t,px,py,pos:Math.hypot(px-w.x1,py-w.y1)}}}return bestDist<=SNAP_TOLERANCE_M?best:null}
+function deleteObject(type,id){const map={wall:'walls',room_region:'room_regions',door:'doors',window:'windows',light:'lights',pod:'perception_pods'};const key=map[type];if(!key)return;if(type==='wall'){homeModel.doors=homeModel.doors.filter(d=>d.wall_id!==id);homeModel.windows=homeModel.windows.filter(w=>w.wall_id!==id);}homeModel[key]=homeModel[key].filter(o=>o.id!==id);if(selectedObject?.id===id&&selectedObject?.type===type)selectedObject=null;}
+function draw(){const svg=v('floorplan');const walls=homeModel.walls.filter(w=>floorRef(w.floor_id)===selectedFloorId);const doors=homeModel.doors.filter(d=>floorRef(d.floor_id)===selectedFloorId);const windows=homeModel.windows.filter(d=>floorRef(d.floor_id)===selectedFloorId);const regions=homeModel.room_regions.filter(r=>r.floor_id===selectedFloorId);
+let html=`<defs><pattern id="grid" width="${m2px(GRID_METRES)}" height="${m2px(GRID_METRES)}" patternUnits="userSpaceOnUse"><path d="M ${m2px(GRID_METRES)} 0 L 0 0 0 ${m2px(GRID_METRES)}" fill="none" stroke="#1e293b" stroke-width="1"/></pattern></defs><rect x="0" y="0" width="900" height="560" fill="url(#grid)"/>`;
+for(let m=0;m<=12;m+=1){html+=`<text x="${OX+m*SCALE}" y="20" font-size="10" fill="#94a3b8">${m}</text><text x="8" y="${OY+m*SCALE}" font-size="10" fill="#94a3b8">${m}</text>`;}
+html += `<text x="${OX}" y="12" font-size="11" fill="#cbd5e1">1 grid square = ${GRID_METRES} m</text>`;
+regions.forEach(r=>{const pts=r.points.map(p=>`${OX+m2px(p[0])},${OY+m2px(p[1])}`).join(' '); const sel=selectedObject?.id===r.id&&selectedObject?.type==='room_region'; html += `<polygon data-type="room_region" data-id="${r.id}" points="${pts}" fill="${sel?'#9333ea33':'#1d4ed822'}" stroke="#60a5fa" stroke-width="1.5"/>`; if(r.points.length){const c=r.points.reduce((a,p)=>[a[0]+p[0],a[1]+p[1]],[0,0]); html += `<text x="${OX+m2px(c[0]/r.points.length)}" y="${OY+m2px(c[1]/r.points.length)}" fill="#e2e8f0" font-size="12">${r.name}</text>`;}});
+walls.forEach(w=>{const ext=(w.wall_type||'internal')==='external';const sel=selectedObject?.type==='wall'&&selectedObject.id===w.id;html+=`<line data-type="wall" data-id="${w.id}" x1="${OX+m2px(w.x1)}" y1="${OY+m2px(w.y1)}" x2="${OX+m2px(w.x2)}" y2="${OY+m2px(w.y2)}" stroke="${sel?'#f43f5e':(ext?'#f8fafc':'#94a3b8')}" stroke-width="${ext?8:4}"/>`; const mx=(w.x1+w.x2)/2,my=(w.y1+w.y2)/2; html+=`<text x="${OX+m2px(mx)+4}" y="${OY+m2px(my)-6}" font-size="11" fill="#cbd5e1">${wallLen(w).toFixed(2)}m • ${wallAngle(w).toFixed(0)}°</text>`});
+const renderOpening=(o,type,color)=>{const w=homeModel.walls.find(x=>x.id===o.wall_id); if(!w) return; const len=wallLen(w)||1; const t=(o.position_along_wall_m||0)/len; const px=w.x1+(w.x2-w.x1)*t, py=w.y1+(w.y2-w.y1)*t; const nx=(w.x2-w.x1)/len, ny=(w.y2-w.y1)/len; const half=(o.width_m||o.width||1)/2; const x1=px-nx*half,y1=py-ny*half,x2=px+nx*half,y2=py+ny*half; html+=`<line data-type="${type}" data-id="${o.id}" x1="${OX+m2px(x1)}" y1="${OY+m2px(y1)}" x2="${OX+m2px(x2)}" y2="${OY+m2px(y2)}" stroke="${color}" stroke-width="6"/>`;};
+doors.forEach(d=>renderOpening(d,'door','#22d3ee')); windows.forEach(w=>renderOpening(w,'window','#60a5fa'));
+svg.innerHTML=html; v('mode-status').textContent=`Mode: ${mode}`; v('json-preview').textContent=JSON.stringify(homeModel,null,2); renderSelectionPanel();}
+function renderSelectionPanel(){const p=v('selection-panel'); if(!selectedObject){p.innerHTML='No object selected.';return;} const o=selectedObject; let f=''; if(o.type==='wall')f=`<label>wall_type<select id="sel-wall-type"><option value="internal">internal</option><option value="external">external</option></select></label>`; if(o.type==='door'||o.type==='window')f+=`<label>width_m<input id="sel-width-m" type="number" step="0.1" value="${o.width_m||o.width}"/></label><label>position_along_wall_m<input id="sel-pos-m" type="number" step="0.1" value="${o.position_along_wall_m||0}"/></label>`; if(o.type==='room_region')f+=`<label>room name<input id="sel-room-name" value="${o.name||''}"/></label><label>room type<select id="sel-room-type"><option value="">(optional)</option>${roomTypes.map(t=>`<option value="${t}">${t}</option>`).join('')}</select></label>`;
+if(o.type==='light')f+=`<label>light name<input id="sel-light-name" value="${o.name||''}"/></label>`; if(o.type==='pod')f+=`<label>pod name<input id="sel-pod-name" value="${o.name||''}"/></label><label>orientation<input id="sel-pod-orientation" type="number" step="1" value="${o.orientation_degrees||0}"/></label>`;
+p.innerHTML=`<div><strong>Selected ${o.type}</strong> (${o.id})</div>${f}<button id="apply-selected" type="button">Apply Changes</button>`; if(o.type==='wall')v('sel-wall-type').value=o.wall_type||'internal'; if(o.type==='room_region')v('sel-room-type').value=o.room_type||''; v('apply-selected').onclick=applySelected;}
+function applySelected(){if(!selectedObject)return;const type=selectedObject.type;const id=selectedObject.id;const arr=type==='pod'?homeModel.perception_pods:homeModel[{wall:'walls',door:'doors',window:'windows',room_region:'room_regions',light:'lights'}[type]];const o=arr.find(x=>x.id===id); if(!o)return; if(type==='wall')o.wall_type=v('sel-wall-type').value; if(type==='door'||type==='window'){o.width_m=Number(v('sel-width-m').value);o.width=o.width_m;o.position_along_wall_m=Number(v('sel-pos-m').value);} if(type==='room_region'){o.name=v('sel-room-name').value;o.room_type=v('sel-room-type').value||null;} if(type==='light')o.name=v('sel-light-name').value; if(type==='pod'){o.name=v('sel-pod-name').value;o.orientation_degrees=Number(v('sel-pod-orientation').value);} selectedObject={...o,type}; draw();}
+function handleSvgClick(evt){const type=evt.target?.dataset?.type,id=evt.target?.dataset?.id; if(mode==='select'){selectedObject=type&&id?{...(homeModel.walls.concat(homeModel.room_regions,homeModel.doors,homeModel.windows,homeModel.lights,homeModel.perception_pods).find(o=>o.id===id)||{}),type}:null;draw();return;} if(mode==='erase_wall'&&type&&id){deleteObject(type,id);draw();return;} const p=getSvgPoint(evt); if(mode==='draw_wall'){if(!wallStart)wallStart=p;else{homeModel.walls.push({id:uid('wall'),room_id:null,floor_id:selectedFloorId,x1:wallStart.x,y1:wallStart.y,x2:p.x,y2:p.y,thickness:0.15,wall_type:v('wall-type-select').value});wallStart=null;previewPoint=null;}} else if(mode==='define_room') roomPoints.push([p.x,p.y]); else if(mode==='place_door'||mode==='place_window'){const snapW=nearestWall(p); if(!snapW){window.alert('No nearby wall to snap. Move closer to a wall.'); return;} const payload={id:uid(mode==='place_door'?'door':'window'),room_id:null,wall_id:snapW.wall.id,floor_id:selectedFloorId,x:snapW.px,y:snapW.py,width:mode==='place_door'?0.9:1.2,width_m:mode==='place_door'?0.9:1.2,position_along_wall_m:snapW.pos}; if(mode==='place_door')homeModel.doors.push({...payload,swing_degrees:90}); else homeModel.windows.push(payload);} else if(mode==='place_light')homeModel.lights.push({id:uid('light'),room_id:null,floor_id:selectedFloorId,name:`Light ${homeModel.lights.length+1}`,x:p.x,y:p.y,type:'ceiling'}); else if(mode==='place_pod')homeModel.perception_pods.push({id:uid('pod'),name:`Pod ${homeModel.perception_pods.length+1}`,floor_id:selectedFloorId,x:p.x,y:p.y,orientation_degrees:0,camera_enabled:true,microphone_enabled:true,sensors:['camera','microphone']}); draw();}
+function finishRoom(){if(roomPoints.length<3)return; const name=window.prompt('Room name?','New Room')||`Room ${homeModel.room_regions.length+1}`; const roomType=window.prompt('Room type (optional)','')||null; homeModel.room_regions.push({id:uid('region'),floor_id:selectedFloorId,name,room_type:roomType,points:roomPoints}); roomPoints=[]; draw();}
+async function refresh(){const r=await fetch('/api/home'); homeModel=await r.json(); homeModel.room_regions ||= []; homeModel.perception_pods ||= []; homeModel.windows ||= []; selectedFloorId=homeModel.floors[0]?.id; renderFloorSelect(); fillForm(homeModel); draw();}
+function initToolbar(){const t=v('toolbar'); const labels={select:'Select',draw_wall:'Draw Wall',erase_wall:'Erase',define_room:'Define Room',place_door:'Place Door',place_window:'Place Window',place_light:'Place Light',place_pod:'Place Perception Pod',pan:'Pan/Move'}; t.innerHTML=modeDefs.map(m=>`<button type="button" data-mode="${m}">${labels[m]}</button>`).join(''); t.onclick=(e)=>{const m=e.target?.dataset?.mode; if(!m)return; mode=m; wallStart=null;previewPoint=null; [...t.querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.mode===mode)); draw();}; t.querySelector('button').classList.add('active');}
+function mapFormToModel(m){m.property_name=v('property_name').value;m.property_boundary.width=Number(v('boundary_width').value);m.property_boundary.depth=Number(v('boundary_depth').value);m.house_dimensions.width=Number(v('house_width').value);m.house_dimensions.depth=Number(v('house_depth').value);} function fillForm(m){v('property_name').value=m.property_name;v('boundary_width').value=m.property_boundary.width;v('boundary_depth').value=m.property_boundary.depth;v('house_width').value=m.house_dimensions.width;v('house_depth').value=m.house_dimensions.depth;}
+function renderFloorSelect(){const s=v('floor-select'); s.innerHTML=homeModel.floors.map(f=>`<option value="${f.id}">${f.name}</option>`).join(''); s.value=selectedFloorId;}
+v('home-form').addEventListener('submit',async(e)=>{e.preventDefault();mapFormToModel(homeModel);const r=await fetch('/api/home',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(homeModel)});homeModel=await r.json();draw();});
+v('load-demo').onclick=async()=>{const r=await fetch('/api/home/reset-demo',{method:'POST'});homeModel=await r.json();selectedFloorId=homeModel.floors[0].id;renderFloorSelect();draw();};
+v('new-blank').onclick=async()=>{const r=await fetch('/api/home/new-blank',{method:'POST'});homeModel=await r.json();selectedFloorId=homeModel.floors[0].id;renderFloorSelect();draw();};
+v('delete-selected').onclick=()=>{if(!selectedObject)return;deleteObject(selectedObject.type,selectedObject.id);draw();};
+v('floor-select').onchange=(e)=>{selectedFloorId=e.target.value;selectedObject=null;draw();};v('finish-room').onclick=finishRoom; v('floorplan').addEventListener('click',handleSvgClick); v('floorplan').addEventListener('mousemove',(evt)=>{if(mode==='draw_wall'&&wallStart){previewPoint=getSvgPoint(evt);draw();}});
+initToolbar();refresh();

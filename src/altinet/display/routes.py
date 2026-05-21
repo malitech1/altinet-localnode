@@ -11,9 +11,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from altinet.display.state_adapter import build_dashboard_state
-from altinet.home.default_home import create_default_home_model
 from altinet.home.models import HomeModel
-from altinet.home.storage import load_home_model, reset_to_demo_model, save_home_model
+from altinet.home.storage import load_home_model, reset_to_blank_model, reset_to_demo_model, save_home_model
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[2]
@@ -76,3 +75,8 @@ def save_home(payload: HomeModel) -> dict:
 @router.post("/api/home/reset-demo")
 def reset_demo() -> dict:
     return reset_to_demo_model().model_dump()
+
+
+@router.post("/api/home/new-blank")
+def new_blank_home() -> dict:
+    return reset_to_blank_model().model_dump()
