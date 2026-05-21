@@ -1,0 +1,8 @@
+:root { color-scheme: dark; }
+body { margin: 0; font-family: Arial, sans-serif; background: #111827; color: #e5e7eb; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+h1 { margin-bottom: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+section { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 12px; }
+pre { white-space: pre-wrap; word-break: break-word; background: #0b1220; padding: 8px; border-radius: 6px; min-height: 60px; }
+img { max-width: 100%; border-radius: 8px; border: 1px solid #4b5563; }

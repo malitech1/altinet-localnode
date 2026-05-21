@@ -160,3 +160,20 @@ def test_observe_room_command_prints_structured_output(monkeypatch, capsys):
 
     assert '"source": "webcam"' in captured.out
     assert '"lighting_guess": "dim"' in captured.out
+
+
+def test_dashboard_command_starts_uvicorn(monkeypatch):
+    called = {}
+
+    def _fake_run(app, host, port):
+        called["app"] = app
+        called["host"] = host
+        called["port"] = port
+
+    monkeypatch.setattr("altinet.main.uvicorn.run", _fake_run)
+
+    main(["dashboard", "--host", "0.0.0.0", "--port", "8099"])
+
+    assert called["host"] == "0.0.0.0"
+    assert called["port"] == 8099
+    assert called["app"].title == "Altinet LocalNode Dashboard"
