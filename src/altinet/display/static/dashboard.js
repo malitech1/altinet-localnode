@@ -15,6 +15,41 @@ function extractResidents(data) {
   return safeArray(data?.residents, []).map((r) => r?.name || 'Resident');
 }
 
+function ahlanLocalReply(text) {
+  const normalized = (text || '').trim();
+  const lower = normalized.toLowerCase();
+  if (lower.startsWith('my name is')) {
+    const name = normalized.slice(10).trim() || 'there';
+    return `Thanks ${name}. I can use that to help build your profile once profile learning is enabled.`;
+  }
+  if (lower.includes('light') && (lower.includes('like') || lower.includes('prefer'))) {
+    return 'Noted as a possible lighting preference. In a later step I can ask to save this to your profile.';
+  }
+  return 'Got it. I can help manage the home and track preferences once profile learning is enabled.';
+}
+
+function renderAssistantMessages() {
+  const chat = document.getElementById('assistant-chat');
+  if (!chat) return;
+  const messages = window.__ahlanMessages || [];
+  chat.innerHTML = messages.map((m) => `<div class="chat-message ${m.role}"><strong>${m.role === 'assistant' ? 'AHLAN' : 'You'}:</strong> ${m.content}</div>`).join('');
+}
+
+function appendAssistantMessage(role, content) {
+  if (!window.__ahlanMessages) window.__ahlanMessages = [];
+  window.__ahlanMessages.push({ role, content });
+  renderAssistantMessages();
+}
+
+async function loadUsers() {
+  const response = await fetch('/api/users');
+  const users = await response.json();
+  const residentsEl = document.getElementById('residents-list');
+  if (residentsEl) {
+    residentsEl.innerHTML = users.map((u) => `<li>${u.display_name} · ${u.role} · ${u.access_level} · status: active</li>`).join('') || '<li>No users yet.</li>';
+  }
+}
+
 function roomForEntity(entity, index) {
   const room = entity?.room || entity?.location || ROOM_NAMES[index % ROOM_NAMES.length];
   return ROOM_NAMES.includes(room) ? room : ROOM_NAMES[index % ROOM_NAMES.length];
@@ -61,7 +96,9 @@ async function refreshState() {
     document.getElementById('system-status').textContent = asText(data?.system_status, 'waiting_for_runtime');
 
     const residents = extractResidents(data);
-    document.getElementById('residents-list').innerHTML = residents.map((r) => `<li>${r}</li>`).join('') || '<li>No residents available.</li>';
+    if (!document.getElementById('residents-list').innerHTML) {
+      document.getElementById('residents-list').innerHTML = residents.map((r) => `<li>${r}</li>`).join('') || '<li>No residents available.</li>';
+    }
 
     const decisions = safeArray(data?.decisions, []);
     document.getElementById('decisions-list').innerHTML = decisions.map((d) => {
@@ -81,3 +118,33 @@ async function refreshState() {
 
 refreshState();
 setInterval(refreshState, 2000);
+
+loadUsers();
+
+document.getElementById('assistant-send')?.addEventListener('click', () => {
+  const input = document.getElementById('assistant-input');
+  const text = input?.value || '';
+  if (!text.trim()) return;
+  appendAssistantMessage('user', text.trim());
+  appendAssistantMessage('assistant', ahlanLocalReply(text));
+  input.value = '';
+});
+
+const dialog = document.getElementById('add-user-dialog');
+document.getElementById('open-add-user')?.addEventListener('click', () => dialog?.showModal());
+document.getElementById('cancel-add-user')?.addEventListener('click', () => dialog?.close());
+document.getElementById('add-user-form')?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.target;
+  const payload = {
+    display_name: form.display_name.value,
+    preferred_name: form.preferred_name.value,
+    role: form.role.value,
+    access_level: form.access_level.value,
+    notes: form.notes.value || null,
+  };
+  await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  dialog?.close();
+  form.reset();
+  loadUsers();
+});

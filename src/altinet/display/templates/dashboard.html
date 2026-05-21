@@ -64,8 +64,18 @@
 
       <aside class="panel sidebar-right">
         <section class="side-card">
-          <h3>Residents</h3>
+          <h3>Residents / Users</h3>
+          <button id="open-add-user" type="button">Add User</button>
           <ul id="residents-list"></ul>
+        </section>
+        <section class="side-card">
+          <h3>AHLAN Assistant</h3>
+          <p class="assistant-greeting">Hello, I’m AHLAN. I can help manage the home and learn resident preferences.</p>
+          <div id="assistant-chat" class="assistant-chat"></div>
+          <div class="assistant-input-row">
+            <input id="assistant-input" type="text" placeholder="Message AHLAN..." />
+            <button id="assistant-send" type="button">Send</button>
+          </div>
         </section>
         <section class="side-card">
           <h3>Last 3 Decisions</h3>
@@ -73,6 +83,27 @@
         </section>
       </aside>
     </main>
+    <dialog id="add-user-dialog">
+      <form id="add-user-form" method="dialog">
+        <h3>Add User</h3>
+        <label>Display Name <input name="display_name" required /></label>
+        <label>Preferred Name <input name="preferred_name" required /></label>
+        <label>Role
+          <select name="role">
+            <option value="resident">resident</option><option value="guest">guest</option><option value="child">child</option>
+            <option value="admin">admin</option><option value="service_person">service_person</option><option value="unknown">unknown</option>
+          </select>
+        </label>
+        <label>Access Level
+          <select name="access_level">
+            <option value="owner">owner</option><option value="trusted_resident">trusted_resident</option><option value="resident">resident</option>
+            <option value="guest">guest</option><option value="restricted">restricted</option><option value="blocked">blocked</option>
+          </select>
+        </label>
+        <label>Notes <textarea name="notes"></textarea></label>
+        <div class="dialog-actions"><button type="submit">Save User</button><button type="button" id="cancel-add-user">Cancel</button></div>
+      </form>
+    </dialog>
     <script src="/static/dashboard.js"></script>
   </body>
 </html>
