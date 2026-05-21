@@ -110,3 +110,18 @@ def test_memory_demo_command_prints_ranked_memories(capsys):
 
     assert "Memory demo: relevant episodic memories" in captured.out
     assert "1. Elliot read a bedtime story to Mia." in captured.out
+
+
+def test_runtime_command_runs_loop(monkeypatch, capsys):
+    from altinet.runtime.runtime_loop import RuntimeStats
+
+    monkeypatch.setattr(
+        "altinet.main.run_runtime_loop",
+        lambda *_args, **_kwargs: RuntimeStats(ticks=3, events_processed=6, decisions_made=3, loop_errors=0),
+    )
+
+    main(["runtime", "--max-ticks", "3"])
+    captured = capsys.readouterr()
+
+    assert "Runtime stopped after 3 ticks" in captured.out
+    assert "events=6" in captured.out

@@ -16,6 +16,7 @@ from altinet.events.models import PersonEnteredRoom, TimeTick
 from altinet.events.processor import EventProcessor
 from altinet.events.queue import EventQueue
 from altinet.memory import EpisodicMemory, MemoryContext, MemorySystem
+from altinet.runtime.runtime_loop import run_runtime_loop
 from altinet.perception.capture import capture_room_image
 from altinet.perception.room_context import analyse_room_image_with_openai
 
@@ -107,6 +108,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Run a simple episodic memory retrieval demo.",
     )
 
+    runtime_parser = subparsers.add_parser("runtime", help="Run the continuous LocalNode runtime loop.")
+    runtime_parser.add_argument("--sample-path", type=Path, default=DEFAULT_SAMPLE_PATH)
+    runtime_parser.add_argument("--tick-rate", type=float, default=1.0, help="Tick rate in Hz.")
+    runtime_parser.add_argument("--max-ticks", type=int, default=None, help="Optional max ticks for bounded runs.")
+
     args = parser.parse_args(argv)
 
     if args.command == "contextualise":
@@ -131,6 +137,11 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "memory-demo":
         print(_memory_demo())
+        return
+
+    if args.command == "runtime":
+        stats = run_runtime_loop(args.sample_path, tick_rate_hz=args.tick_rate, max_ticks=args.max_ticks)
+        print(f"Runtime stopped after {stats.ticks} ticks; events={stats.events_processed}; decisions={stats.decisions_made}; errors={stats.loop_errors}")
         return
 
     if args.command == "capture-room":
