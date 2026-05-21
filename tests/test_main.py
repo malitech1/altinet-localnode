@@ -1,4 +1,4 @@
-from src.altinet.main import main
+from altinet.main import main
 
 
 def test_main_prints_running_message(capsys):
