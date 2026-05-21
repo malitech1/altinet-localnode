@@ -1,0 +1,19 @@
+{
+  "devices": [
+    {
+      "id": "device_a5e51c3598f6",
+      "name": "Demo Bedroom Light",
+      "device_type": "light",
+      "room_id": "bedroom",
+      "floor_id": null,
+      "controllable": true,
+      "state": {
+        "power": "off"
+      },
+      "capabilities": [
+        "on_off"
+      ],
+      "notes": ""
+    }
+  ]
+}

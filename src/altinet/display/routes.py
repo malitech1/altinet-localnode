@@ -15,8 +15,19 @@ from altinet.display.state_adapter import build_dashboard_state
 from altinet.assistant.openai_engine import chat_with_ahlan
 from altinet.home.models import HomeModel
 from altinet.home.storage import load_home_model, reset_to_blank_model, reset_to_demo_model, save_home_model
-from altinet.users.models import UserProfile
-from altinet.users.storage import create_user_profile, delete_user_profile, load_user_profiles, save_user_profiles, update_user_profile
+from altinet.domain.users import UserProfile
+from altinet.domain.context import UserPreference, UserRoutine, UserContext
+from altinet.store.registry import RegistryService
+from altinet.store.repositories.users_repository import (
+    add_context_note,
+    add_preference,
+    add_routine,
+    create_user as create_repo_user,
+    delete_user as delete_repo_user,
+    get_user as get_repo_user,
+    list_users as list_repo_users,
+    update_user as update_repo_user,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[2]
@@ -41,6 +52,7 @@ def get_state() -> dict:
     normalized = build_dashboard_state(RUNTIME_STATE_PATH, ROOM_CONTEXT_PATH, LATEST_DECISION_PATH)
     latest_decision = normalized["decisions"][0] if normalized["decisions"] else None
 
+    registry = RegistryService().load_registry()
     return {
         "title": "Altinet LocalNode",
         "current_time": datetime.now(timezone.utc).isoformat(),
@@ -51,6 +63,8 @@ def get_state() -> dict:
         "latest_decision": latest_decision,
         "decision_explanation": latest_decision.get("explanation") if isinstance(latest_decision, dict) else None,
         "perception_summary": normalized["perception"],
+        "registry": registry,
+        "users": registry.get("users", []),
     }
 
 
@@ -86,38 +100,32 @@ def new_blank_home() -> dict:
     return reset_to_blank_model().model_dump()
 
 
+@router.get("/api/registry")
+def get_registry() -> dict:
+    return RegistryService().load_registry()
+
+
 @router.get("/api/users")
 def get_users() -> list[dict]:
-    return [profile.model_dump(mode="json") for profile in load_user_profiles()]
-
-
-@router.post("/api/users/seed-demo")
-def seed_demo_users() -> list[dict]:
-    profiles = load_user_profiles()
-    if not any(profile.display_name == "Elliot" for profile in profiles):
-        profiles.append(UserProfile(display_name="Elliot", preferred_name="Elliot", role="admin", access_level="owner"))
-    if not any(profile.display_name == "Guest" for profile in profiles):
-        profiles.append(UserProfile(display_name="Guest", preferred_name="Guest", role="guest", access_level="restricted"))
-    save_user_profiles(profiles)
-    return [profile.model_dump(mode="json") for profile in profiles]
+    return [profile.model_dump(mode="json") for profile in list_repo_users()]
 
 
 @router.post("/api/users")
 def create_user(payload: UserProfile) -> dict:
-    return create_user_profile(payload).model_dump(mode="json")
+    return create_repo_user(payload).model_dump(mode="json")
 
 
 @router.get("/api/users/{user_id}")
 def get_user(user_id: str) -> dict:
-    for profile in load_user_profiles():
-        if profile.id == user_id:
-            return profile.model_dump(mode="json")
-    raise HTTPException(status_code=404, detail="User not found")
+    profile = get_repo_user(user_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return profile.model_dump(mode="json")
 
 
 @router.patch("/api/users/{user_id}")
 def patch_user(user_id: str, updates: dict) -> dict:
-    updated = update_user_profile(user_id, updates)
+    updated = update_repo_user(user_id, updates)
     if updated is None:
         raise HTTPException(status_code=404, detail="User not found")
     return updated.model_dump(mode="json")
@@ -125,7 +133,7 @@ def patch_user(user_id: str, updates: dict) -> dict:
 
 @router.delete("/api/users/{user_id}")
 def remove_user(user_id: str) -> dict:
-    deleted = delete_user_profile(user_id)
+    deleted = delete_repo_user(user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
     return {"deleted": True, "user_id": user_id}
@@ -140,3 +148,27 @@ class AssistantChatRequest(BaseModel):
 def assistant_chat(payload: AssistantChatRequest) -> dict:
     result = chat_with_ahlan(payload.message, user_id=payload.user_id, recent_messages=[])
     return result.model_dump()
+
+
+@router.post("/api/users/{user_id}/preferences")
+def create_user_preference(user_id: str, payload: UserPreference) -> dict:
+    updated = add_preference(user_id, payload)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated.model_dump(mode="json")
+
+
+@router.post("/api/users/{user_id}/routines")
+def create_user_routine(user_id: str, payload: UserRoutine) -> dict:
+    updated = add_routine(user_id, payload)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated.model_dump(mode="json")
+
+
+@router.post("/api/users/{user_id}/context-notes")
+def create_user_context_note(user_id: str, payload: UserContext) -> dict:
+    updated = add_context_note(user_id, payload)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated.model_dump(mode="json")

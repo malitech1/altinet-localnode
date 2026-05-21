@@ -21,6 +21,11 @@ from altinet.perception.capture import capture_room_image
 from altinet.perception.pipeline import observe_room
 from altinet.perception.vision_engine import analyse_room_image_with_openai
 from altinet.display.app import create_app
+from altinet.domain.access import AccessLevel
+from altinet.domain.agents import AgentProfile
+from altinet.domain.devices import DeviceProfile
+from altinet.domain.users import UserProfile
+from altinet.store.registry import RegistryService
 import uvicorn
 
 
@@ -122,6 +127,7 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     runtime_parser = subparsers.add_parser("runtime", help="Run the continuous LocalNode runtime loop.")
+    subparsers.add_parser("seed-demo-data", help="Seed demo backend registry data.")
     dashboard_parser = subparsers.add_parser("dashboard", help="Run the LocalNode display dashboard.")
     dashboard_parser.add_argument("--host", default="127.0.0.1")
     dashboard_parser.add_argument("--port", type=int, default=8000)
@@ -162,6 +168,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "dashboard":
         uvicorn.run(create_app(), host=args.host, port=args.port)
+        return
+
+    if args.command == "seed-demo-data":
+        print(_seed_demo_data())
         return
 
     if args.command == "webcam-test":
@@ -319,3 +329,27 @@ def _memory_demo() -> str:
 
 if __name__ == "__main__":
     main()
+
+
+def _seed_demo_data() -> str:
+    registry = RegistryService()
+    users = [
+        UserProfile(display_name="Elliot", preferred_name="Elliot", access_level=AccessLevel.RESIDENT_OWNER),
+        UserProfile(display_name="Guest Family", access_level=AccessLevel.GUEST_FAMILY),
+        UserProfile(display_name="Guest Visitor", access_level=AccessLevel.GUEST_VISITOR),
+        UserProfile(display_name="Unknown Person", access_level=AccessLevel.UNKNOWN),
+        UserProfile(display_name="Intruder Placeholder", access_level=AccessLevel.INTRUDER),
+    ]
+    for u in users:
+        if not any(existing.display_name == u.display_name for existing in registry.users.list_users()):
+            registry.users.create_user(u)
+
+    registry.save_agents([
+        AgentProfile(name="AHLAN", agent_type="software_agent", capabilities=["conversation", "planning"]),
+        AgentProfile(name="LocalNode", agent_type="localnode_service", capabilities=["orchestration"]),
+        AgentProfile(name="Demo Perception Pod", agent_type="perception_pod", capabilities=["room_observation"]),
+    ])
+    registry.save_devices([
+        DeviceProfile(name="Demo Bedroom Light", device_type="light", room_id="bedroom", controllable=True, state={"power": "off"}, capabilities=["on_off"]),
+    ])
+    return "Seeded demo registry data."

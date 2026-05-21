@@ -1,0 +1,41 @@
+{
+  "agents": [
+    {
+      "id": "agent_448a4e8051d4",
+      "name": "AHLAN",
+      "agent_type": "software_agent",
+      "location": null,
+      "capabilities": [
+        "conversation",
+        "planning"
+      ],
+      "status": "active",
+      "permissions": [],
+      "notes": ""
+    },
+    {
+      "id": "agent_0411c8db5bff",
+      "name": "LocalNode",
+      "agent_type": "localnode_service",
+      "location": null,
+      "capabilities": [
+        "orchestration"
+      ],
+      "status": "active",
+      "permissions": [],
+      "notes": ""
+    },
+    {
+      "id": "agent_da5c7c8f226b",
+      "name": "Demo Perception Pod",
+      "agent_type": "perception_pod",
+      "location": null,
+      "capabilities": [
+        "room_observation"
+      ],
+      "status": "active",
+      "permissions": [],
+      "notes": ""
+    }
+  ]
+}
