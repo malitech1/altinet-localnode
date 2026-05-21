@@ -76,7 +76,21 @@ def test_post_seed_demo_creates_demo_users(monkeypatch, tmp_path):
     assert response.status_code == 200
     body = response.json()
     assert body["ok"] is True
-    assert len(body["users"]) >= 1
+    assert body["message"] == "Demo data seeded"
+    assert body["users_count"] >= 1
+
+
+def test_get_users_returns_elliot_after_seed(monkeypatch, tmp_path):
+    users_path = tmp_path / "users.json"
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
+    client = TestClient(create_app())
+    seed_response = client.post("/api/registry/seed-demo")
+    assert seed_response.status_code == 200
+
+    response = client.get("/api/users")
+    assert response.status_code == 200
+    users = response.json()
+    assert any(user.get("display_name") == "Elliot" for user in users)
 
 
 def test_api_state_includes_users(monkeypatch, tmp_path):

@@ -119,20 +119,20 @@ def create_user(payload: UserCreateRequest) -> dict:
 
 @router.post("/api/registry/seed-demo")
 def seed_demo_registry_users() -> dict:
-    registry = RegistryService()
     demo_profiles = [
         UserCreateRequest(display_name="Elliot", preferred_name="Elliot", access_level=AccessLevel.RESIDENT_OWNER, relationship_to_home="owner", contextual_information="Primary resident and decision maker."),
         UserCreateRequest(display_name="Mia", preferred_name="Mia", access_level=AccessLevel.RESIDENT_STANDARD, relationship_to_home="resident", contextual_information="Often in bedroom during bedtime routine."),
         UserCreateRequest(display_name="Guest Family", access_level=AccessLevel.GUEST_FAMILY, relationship_to_home="guest"),
     ]
     created = 0
-    existing_names = {u.display_name for u in registry.users.list_users()}
+    existing_names = {u.display_name for u in list_repo_users()}
     for profile in demo_profiles:
         if profile.display_name in existing_names:
             continue
         create_repo_user(_build_user_profile(profile))
         created += 1
-    return {"ok": True, "created": created, "users": [u.model_dump(mode="json") for u in registry.users.list_users()]}
+    users = [u.model_dump(mode="json") for u in list_repo_users()]
+    return {"ok": True, "message": "Demo data seeded", "users_count": len(users), "created": created, "users": users}
 
 
 @router.get("/api/users/{user_id}")
