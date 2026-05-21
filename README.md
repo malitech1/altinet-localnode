@@ -485,7 +485,7 @@ If binding fails:
 
 ## Home Builder (first module)
 
-This repo now includes the first version of an editable **Home Builder** flow for defining a property model and visualizing a simple SVG floorplan.
+The Home Builder now starts in a **blank project mode** for development workflows.
 
 Run the dashboard server:
 
@@ -497,4 +497,12 @@ Open:
 
 - `http://127.0.0.1:8000/home-builder`
 
-This is the beginning of the editable home/floorplan system and currently demonstrates a single-room demo with one door and one light.
+How to use:
+
+- Start from **New Altinet Home** (blank): one empty ground floor, no default walls/rooms/doors/windows/lights/pods.
+- Use **Load Demo** anytime to load the sample prebuilt home.
+- Grid units are in **metres** in the JSON model.
+- Scale: **1 grid square = 0.5 m** (shown on the editor canvas).
+- Draw walls in **Draw Wall** mode (choose internal/external wall type).
+- Define rooms in **Define Room** mode, then click **Finish Room** to name/type the room polygon.
+- Place doors/windows in **Place Door** / **Place Window** mode; they snap to nearby walls and store `wall_id` + `position_along_wall_m`.

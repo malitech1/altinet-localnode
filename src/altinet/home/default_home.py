@@ -13,6 +13,24 @@ from altinet.home.models import (
 )
 
 
+def create_blank_home_model() -> HomeModel:
+    return HomeModel(
+        property_name="New Altinet Home",
+        property_boundary=PropertyBoundary(width=20.0, depth=30.0),
+        house_dimensions=HouseDimensions(width=0.1, depth=0.1),
+        floors=[Floor(id="floor-ground", name="Ground Floor", level=0)],
+        rooms=[],
+        room_regions=[],
+        walls=[],
+        doors=[],
+        windows=[],
+        lights=[],
+        perception_pods=[],
+        device_placements=[],
+        units="metres",
+    )
+
+
 def create_default_home_model() -> HomeModel:
     room = Room(id="room-demo", floor_id="floor-ground", name="Demo Room", x=0.0, y=0.0, width=6.0, depth=4.0)
     walls = [
@@ -30,7 +48,7 @@ def create_default_home_model() -> HomeModel:
         rooms=[room],
         room_regions=[RoomRegion(id="region-demo-room", floor_id=room.floor_id, name=room.name, points=[[0.0, 0.0], [6.0, 0.0], [6.0, 4.0], [0.0, 4.0]])],
         walls=walls,
-        doors=[Door(id="door-main", room_id=room.id, floor_id=room.floor_id, wall_id="wall-south", x=2.4, y=4.0, width=0.9)],
+        doors=[Door(id="door-main", room_id=room.id, floor_id=room.floor_id, wall_id="wall-south", x=2.4, y=4.0, width=0.9, position_along_wall_m=2.4, width_m=0.9)],
         windows=[],
         lights=[light],
         perception_pods=[

@@ -35,6 +35,7 @@ class RoomRegion(BaseModel):
     id: str
     floor_id: str
     name: str
+    room_type: Literal["bedroom", "kitchen", "bathroom", "living_room", "office", "laundry", "hallway", "other"] | None = None
     points: list[list[float]] = Field(default_factory=list)
 
 
@@ -61,15 +62,24 @@ class Door(BaseModel):
     y: float
     width: float = Field(gt=0)
     swing_degrees: float = 90
+    position_along_wall_m: float | None = None
+    width_m: float = Field(default=0.9, gt=0)
+    swing_direction: str | None = None
+    door_type: str | None = None
 
 
 class Window(BaseModel):
     id: str
-    room_id: str
+    room_id: str | None = None
     wall_id: str
+    floor_id: str | None = None
     x: float
     y: float
     width: float = Field(gt=0)
+    position_along_wall_m: float
+    width_m: float = Field(default=1.2, gt=0)
+    height_m: float | None = None
+    sill_height_m: float | None = None
 
 
 class Light(BaseModel):
