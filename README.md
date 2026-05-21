@@ -536,3 +536,16 @@ Manual verification checklist:
 3. Use **Zoom In/Out/Reset** and verify zoom percentage updates while floorplan objects remain selectable.
 4. Confirm grid scale label/ruler transitions across zoom levels (for example `Grid: 1 m`, `Grid: 50 cm`, `Grid: 10 cm`, `Grid: 1 cm`).
 5. While zoomed in/out, place walls/doors/windows/lights/pods and verify placement/snapping coordinates remain accurate.
+
+Regression checklist for current editor reliability fixes:
+
+- [ ] Zoom In changes grid scale.
+- [ ] Zoom Out changes grid scale.
+- [ ] Reset Zoom restores full plan.
+- [ ] Select wall shows wall properties.
+- [ ] Select door shows door properties.
+- [ ] Select window shows window properties.
+- [ ] Select light shows light properties.
+- [ ] Select perception pod shows pod properties.
+- [ ] Duplicate light placement is rejected.
+- [ ] Overlapping door/window placement is rejected.
