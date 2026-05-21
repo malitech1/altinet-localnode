@@ -9,7 +9,9 @@ The CLI entrypoint is implemented in `src/altinet/main.py` and exposes these com
 - `contextualise`
 - `build-prompt`
 - `decide` (`--engine mock_engine` or `--engine openai`)
+- `webcam-test`
 - `capture-room`
+- `observe-room`
 - `analyse-room-image`
 - `simulate-events`
 - `memory-demo`
@@ -105,6 +107,32 @@ The following commands require `OPENAI_API_KEY`:
 Other commands work without an OpenAI key.
 
 ---
+
+
+### Webcam perception quickstart (PyCharm / Windows)
+
+1. Ensure a webcam is connected and not being used by another app (Zoom/Teams/Camera).
+2. In PyCharm terminal, run:
+   ```powershell
+   python -m altinet.main webcam-test
+   ```
+3. Capture one frame:
+   ```powershell
+   python -m altinet.main capture-room
+   ```
+4. Run local room observation (no OpenAI call):
+   ```powershell
+   python -m altinet.main observe-room
+   ```
+
+Captured images are saved under `data/captures/`:
+- `data/captures/latest.jpg` (always overwritten on each capture)
+- optional timestamped files can be enabled in code (`capture_single_frame(..., save_timestamped=True)`)
+
+Troubleshooting webcam permissions (Windows):
+- Settings → Privacy & security → Camera → enable camera access and app access.
+- Close other apps using the webcam before running Altinet commands.
+- In PyCharm, restart the run configuration/interpreter after granting permissions.
 
 ## Running tests
 
@@ -307,7 +335,9 @@ Uses:
   - `analyse-room-image ...`
 
 - **Needs webcam**:
-  - `capture-room`
+  - `webcam-test`
+- `capture-room`
+- `observe-room`
 
 - **No OpenAI/webcam required**:
   - basic CLI run
