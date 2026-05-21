@@ -12,14 +12,7 @@ function safeArray(value, fallback = []) {
 }
 
 function extractResidents(data) {
-  return safeArray(data?.room_context?.occupants, ['Elliot', 'Mia']);
-}
-
-function extractDecisions(data) {
-  const events = safeArray(data?.runtime_state?.recent_events);
-  const fromEvents = events.filter((e) => typeof e === 'object' && e !== null && (e.action || e.selected_action));
-  const latest = data?.latest_decision ? [data.latest_decision] : [];
-  return [...latest, ...fromEvents].slice(0, 3);
+  return safeArray(data?.residents, []).map((r) => r?.name || 'Resident');
 }
 
 function roomForEntity(entity, index) {
@@ -30,9 +23,9 @@ function roomForEntity(entity, index) {
 function renderFloorplan(data) {
   const floorEl = document.getElementById('floorplan-grid');
   if (!floorEl) return;
-  const residents = extractResidents(data).map((name, i) => ({ name, room: ROOM_NAMES[i % ROOM_NAMES.length] }));
-  const devices = safeArray(data?.runtime_state?.appliances, ['HVAC', 'Oven', 'Washer']).map((name, i) => ({ name: asText(name, 'Device'), room: ROOM_NAMES[(i + 2) % ROOM_NAMES.length] }));
-  const agents = safeArray(data?.runtime_state?.agents, ['Scout Bot', 'Care Agent']).map((name, i) => ({ name: asText(name, 'Agent'), room: ROOM_NAMES[(i + 4) % ROOM_NAMES.length] }));
+  const residents = safeArray(data?.residents, []).map((r, i) => ({ name: r.name || 'Resident', room: r.location || ROOM_NAMES[i % ROOM_NAMES.length] }));
+  const devices = safeArray(data?.devices, []).map((d, i) => ({ name: d.name || 'Device', room: d.room || ROOM_NAMES[(i + 2) % ROOM_NAMES.length] }));
+  const agents = safeArray(data?.agents, []).map((a, i) => ({ name: a.name || 'Agent', room: a.room || ROOM_NAMES[(i + 4) % ROOM_NAMES.length] }));
 
   const html = ROOM_NAMES.map((room) => {
     const rs = residents.filter((r) => roomForEntity(r, 0) === room).map((r) => `<span class="marker resident"><i class="dot resident"></i>${r.name}</span>`).join('');
@@ -48,9 +41,9 @@ function renderBottomCards(data) {
   const el = document.getElementById('bottom-cards');
   if (!el) return;
   const cards = [
-    ['Agents', safeArray(data?.runtime_state?.agents, ['2 active']).join(', ')],
-    ['Appliances', safeArray(data?.runtime_state?.appliances, ['HVAC nominal']).join(', ')],
-    ['Active Alerts', safeArray(data?.runtime_state?.alerts, ['No active alerts']).join(', ')],
+    ['Agents', safeArray(data?.agents, []).map((a) => a.name).join(', ') || 'No active agents'],
+    ['Appliances', safeArray(data?.devices, []).map((d) => `${d.name} (${d.state})`).join(', ') || 'No appliances'],
+    ['Active Alerts', safeArray(data?.alerts, ['No active alerts']).join(', ')],
     ['Energy Usage', asText(data?.runtime_state?.energy_usage, '4.1 kWh · Placeholder')],
     ['Indoor Climate', asText(data?.runtime_state?.indoor_climate, '21°C · 46% humidity')],
   ];
@@ -70,7 +63,7 @@ async function refreshState() {
     const residents = extractResidents(data);
     document.getElementById('residents-list').innerHTML = residents.map((r) => `<li>${r}</li>`).join('') || '<li>No residents available.</li>';
 
-    const decisions = extractDecisions(data);
+    const decisions = safeArray(data?.decisions, []);
     document.getElementById('decisions-list').innerHTML = decisions.map((d) => {
       const action = asText(d?.action || d?.selected_action, 'no action');
       const explanation = asText(d?.explanation || d?.rationale, 'No explanation available.');
