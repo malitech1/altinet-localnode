@@ -474,3 +474,19 @@ If binding fails:
 - Close any existing Python/Uvicorn process using the same port.
 - In PyCharm, stop old run configurations before starting a new dashboard run.
 - Use `--host 127.0.0.1` explicitly if firewall/network policy blocks non-local binding.
+
+## Home Builder (first module)
+
+This repo now includes the first version of an editable **Home Builder** flow for defining a property model and visualizing a simple SVG floorplan.
+
+Run the dashboard server:
+
+```powershell
+uvicorn altinet.display.app:create_app --reload
+```
+
+Open:
+
+- `http://127.0.0.1:8000/home-builder`
+
+This is the beginning of the editable home/floorplan system and currently demonstrates a single-room demo with one door and one light.
