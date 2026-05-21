@@ -65,9 +65,36 @@
       <aside class="panel sidebar-right">
         <section class="side-card">
           <h3>Residents / Users</h3>
-          <div class="user-actions"><button id="open-add-user" type="button">Add User</button><button id="seed-demo-users-button" type="button">Seed Demo Users</button></div>
+          <div class="user-actions"><button id="add-user-button" type="button">Add User</button><button id="seed-demo-users-button" type="button">Seed Demo Users</button></div>
           <p id="dashboard-status" class="dashboard-status" aria-live="polite"></p>
-          <ul id="residents-list"></ul>
+          <form id="add-user-form" hidden>
+            <h4>Add User</h4>
+            <label>Display Name <input id="user-display-name" name="display_name" required /></label>
+            <label>Preferred Name <input id="user-preferred-name" name="preferred_name" /></label>
+            <label>Access Level
+              <select id="user-access-level" name="access_level">
+                <option value="resident_owner">resident_owner</option>
+                <option value="resident_admin">resident_admin</option>
+                <option value="resident_standard" selected>resident_standard</option>
+                <option value="guest_family">guest_family</option>
+                <option value="guest_friend">guest_friend</option>
+                <option value="guest_visitor">guest_visitor</option>
+                <option value="service_person">service_person</option>
+                <option value="child">child</option>
+                <option value="pet">pet</option>
+                <option value="unknown">unknown</option>
+                <option value="restricted">restricted</option>
+                <option value="blocked">blocked</option>
+                <option value="intruder">intruder</option>
+              </select>
+            </label>
+            <label>Contextual Information <textarea id="user-contextual-information" name="contextual_information"></textarea></label>
+            <div class="dialog-actions">
+              <button id="save-user-button" type="submit">Save User</button>
+              <button id="cancel-user-button" type="button">Cancel</button>
+            </div>
+          </form>
+          <ul id="users-list"></ul>
         </section>
         <section class="side-card">
           <h3>AHLAN Assistant</h3>
@@ -86,23 +113,6 @@
         </section>
       </aside>
     </main>
-    <dialog id="add-user-dialog">
-      <form id="add-user-form" method="dialog">
-        <h3>Add User</h3>
-        <label>Display Name <input name="display_name" required /></label>
-        <label>Preferred Name <input name="preferred_name" /></label>
-                <label>Access Level
-          <select name="access_level">
-            <option value="resident_owner">resident_owner</option><option value="resident_admin">resident_admin</option><option value="resident_standard">resident_standard</option>
-            <option value="guest_family">guest_family</option><option value="guest_friend">guest_friend</option><option value="guest_visitor">guest_visitor</option><option value="service_person">service_person</option><option value="child">child</option><option value="pet">pet</option><option value="unknown">unknown</option><option value="restricted">restricted</option><option value="blocked">blocked</option><option value="intruder">intruder</option>
-          </select>
-        </label>
-        <label>Relationship to Home <input name="relationship_to_home" /></label>
-        <label>Notes <textarea name="notes"></textarea></label>
-        <label>Contextual Information <textarea name="contextual_information"></textarea></label>
-        <div class="dialog-actions"><button type="submit">Save User</button><button type="button" id="cancel-add-user">Cancel</button></div>
-      </form>
-    </dialog>
     <script src="/static/dashboard.js"></script>
   </body>
 </html>

@@ -55,7 +55,7 @@ def test_api_users_returns_json(monkeypatch, tmp_path):
 
 
 def test_api_users_returns_empty_array_when_missing_file(monkeypatch, tmp_path):
-    users_path = tmp_path / "missing_users.json"
+    users_path = tmp_path / "missing" / "users.json"
     monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
     client = TestClient(create_app())
     response = client.get("/api/users")
@@ -108,10 +108,39 @@ def test_api_state_includes_users(monkeypatch, tmp_path):
 
 
 def test_post_users_creates_backend_user(monkeypatch, tmp_path):
-    users_path = tmp_path / "users.json"
+    users_path = tmp_path / "nested" / "users.json"
     monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
     client = TestClient(create_app())
     response = client.post("/api/users", json={"display_name": "Casey", "access_level": "guest_visitor", "notes": "temporary"})
     assert response.status_code == 200
+    assert users_path.exists()
     stored = UsersRepository(users_path).list_users()
     assert any(u.display_name == "Casey" for u in stored)
+
+
+def test_post_users_returns_created_profile(monkeypatch, tmp_path):
+    users_path = tmp_path / "users.json"
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
+    client = TestClient(create_app())
+    response = client.post("/api/users", json={"display_name": "Elliot", "preferred_name": "Elliot", "access_level": "resident_owner", "contextual_information": "Founder of Alturi/Altinet"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["display_name"] == "Elliot"
+    assert body["access_level"] == "resident_owner"
+    assert body["id"]
+    assert body["created_at"]
+    assert body["updated_at"]
+
+
+def test_get_users_returns_created_profile_after_post(monkeypatch, tmp_path):
+    users_path = tmp_path / "users.json"
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
+    client = TestClient(create_app())
+    create_response = client.post("/api/users", json={"display_name": "Elliot"})
+    assert create_response.status_code == 200
+
+    get_response = client.get("/api/users")
+    assert get_response.status_code == 200
+    payload = get_response.json()
+    assert len(payload) == 1
+    assert payload[0]["display_name"] == "Elliot"

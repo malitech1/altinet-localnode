@@ -163,7 +163,7 @@ def remove_user(user_id: str) -> dict:
 
 class UserCreateRequest(BaseModel):
     display_name: str = Field(min_length=1)
-    access_level: AccessLevel
+    access_level: AccessLevel = AccessLevel.RESIDENT_STANDARD
     preferred_name: str | None = None
     relationship_to_home: str | None = None
     notes: str | None = None
