@@ -83,16 +83,16 @@ def test_dashboard_contains_required_element_ids():
     response = client.get("/")
     assert response.status_code == 200
     for element_id in [
-        "header-date",
-        "current-time",
-        "system-status",
-        "residents-list",
-        "floorplan-grid",
-        "decisions-list",
-        "assistant-chat",
-        "assistant-mode",
-        "assistant-send",
-        "assistant-input",
+        "dashboard-status",
+        "users-list",
+        "add-user-button",
+        "add-user-form",
+        "user-display-name",
+        "user-preferred-name",
+        "user-access-level",
+        "user-contextual-information",
+        "save-user-button",
+        "cancel-user-button",
     ]:
         assert f'id="{element_id}"' in response.text
 
@@ -102,10 +102,16 @@ def test_dashboard_contains_user_list_and_seed_button():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "id=\"residents-list\"" in response.text
+    assert "id=\"users-list\"" in response.text
     assert "id=\"seed-demo-users-button\"" in response.text
 
 
 def test_dashboard_js_references_seed_demo_users_button():
     js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
     assert "seed-demo-users-button" in js
+
+
+def test_dashboard_js_contains_add_and_save_button_listeners():
+    js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
+    assert "add-user-button" in js
+    assert "save-user-button" in js

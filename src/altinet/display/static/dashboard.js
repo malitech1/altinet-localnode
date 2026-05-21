@@ -1,6 +1,12 @@
 const ROOM_NAMES = [
   'Kitchen', 'Dining Room', 'Living Room', 'Bedroom 1', 'Bathroom', 'Laundry', 'Office', 'Entry'
 ];
+console.log('Altinet dashboard.js loaded');
+
+function setDashboardStatus(message) {
+  const statusEl = document.getElementById('dashboard-status');
+  if (statusEl) statusEl.textContent = message;
+}
 
 function asText(value, fallback) {
   if (value === null || value === undefined || value === '') return fallback;
@@ -41,18 +47,19 @@ function appendAssistantMessage(role, content) {
 }
 
 async function loadUsers() {
+  setDashboardStatus('Loading users...');
   try {
     const response = await fetch('/api/users');
+    if (!response.ok) throw new Error(`GET /api/users failed (${response.status})`);
     const users = await response.json();
     window.__loadedUsers = Array.isArray(users) ? users : [];
+    setDashboardStatus(`Loaded ${window.__loadedUsers.length} users`);
   } catch (error) {
     console.error('Failed to load users', error);
     window.__loadedUsers = [];
+    setDashboardStatus(`Failed to load users: ${error.message}`);
   }
-  const residentsEl = document.getElementById('residents-list');
-  if (residentsEl) {
-    residentsEl.innerHTML = renderUsers(window.__loadedUsers);
-  }
+  renderUsers(window.__loadedUsers);
 }
 
 
@@ -70,8 +77,11 @@ function firstContextLine(user) {
 }
 
 function renderUsers(users) {
-  const residentsEl = document.getElementById('residents-list');
-  if (!residentsEl) return;
+  const residentsEl = document.getElementById('users-list');
+  if (!residentsEl) {
+    setDashboardStatus('Missing required DOM element: users-list');
+    return;
+  }
   if (!users || users.length === 0) {
     residentsEl.innerHTML = '<li class="empty-users">No users added yet. Run seed-demo-data or add a user.</li>';
     return;
@@ -157,8 +167,9 @@ async function refreshState() {
     document.getElementById('system-status').textContent = asText(data?.system_status, 'waiting_for_runtime');
 
     const residents = extractResidents(data);
-    if (!document.getElementById('residents-list').innerHTML) {
-      document.getElementById('residents-list').innerHTML = residents.map((r) => `<li>${r}</li>`).join('') || '<li>No residents available.</li>';
+    const usersListEl = document.getElementById('users-list');
+    if (usersListEl && !usersListEl.innerHTML) {
+      usersListEl.innerHTML = residents.map((r) => `<li>${r}</li>`).join('') || '<li>No residents available.</li>';
     }
 
     const decisions = safeArray(data?.decisions, []);
@@ -187,6 +198,7 @@ refreshState();
 setInterval(refreshState, 2000);
 
 loadUsers();
+setDashboardStatus('Dashboard ready');
 
 document.getElementById('assistant-send')?.addEventListener('click', async () => {
   const input = document.getElementById('assistant-input');
@@ -207,24 +219,62 @@ document.getElementById('assistant-send')?.addEventListener('click', async () =>
   }
 });
 
-const dialog = document.getElementById('add-user-dialog');
-document.getElementById('open-add-user')?.addEventListener('click', () => dialog?.showModal());
-document.getElementById('cancel-add-user')?.addEventListener('click', () => dialog?.close());
+const requiredElements = [
+  'dashboard-status', 'users-list', 'add-user-button', 'add-user-form', 'user-display-name',
+  'user-preferred-name', 'user-access-level', 'user-contextual-information', 'save-user-button', 'cancel-user-button'
+];
+const missingRequired = requiredElements.filter((id) => !document.getElementById(id));
+if (missingRequired.length > 0) setDashboardStatus(`Missing required DOM element(s): ${missingRequired.join(', ')}`);
+
+const addUserButton = document.getElementById('add-user-button');
+const addUserForm = document.getElementById('add-user-form');
+const cancelUserButton = document.getElementById('cancel-user-button');
+addUserButton?.addEventListener('click', () => {
+  if (addUserForm) {
+    addUserForm.hidden = false;
+    setDashboardStatus('Add User form shown');
+  }
+});
+cancelUserButton?.addEventListener('click', () => {
+  if (addUserForm) {
+    addUserForm.reset();
+    addUserForm.hidden = true;
+    setDashboardStatus('Add User cancelled');
+  }
+});
 document.getElementById('add-user-form')?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const form = event.target;
+  const displayName = form.display_name.value?.trim();
+  if (!displayName) {
+    setDashboardStatus('Display name is required');
+    return;
+  }
   const payload = {
-    display_name: form.display_name.value,
+    display_name: displayName,
     preferred_name: form.preferred_name.value || null,
-    access_level: form.access_level.value,
-    relationship_to_home: form.relationship_to_home.value || null,
-    notes: form.notes.value || null,
+    access_level: form.access_level.value || 'resident_standard',
     contextual_information: form.contextual_information.value || null,
   };
-  await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-  dialog?.close();
-  form.reset();
-  loadUsers();
+  setDashboardStatus('Saving user...');
+  try {
+    const response = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!response.ok) {
+      const errorText = await response.text();
+      setDashboardStatus(`Save failed (${response.status}): ${errorText}`);
+      console.error('Failed to save user', { status: response.status, errorText });
+      return;
+    }
+    await response.json();
+    await loadUsers();
+    form.reset();
+    form.access_level.value = 'resident_standard';
+    form.hidden = true;
+    setDashboardStatus('User saved');
+  } catch (error) {
+    console.error('Failed to save user', error);
+    setDashboardStatus(`Save failed: ${error.message}`);
+  }
 });
 
 const seedButton = document.getElementById('seed-demo-users-button');

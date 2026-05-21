@@ -141,6 +141,21 @@ Troubleshooting webcam permissions (Windows):
 - Access Home Builder from the left sidebar (**Home Builder**) or the **Edit Home / Floorplan** button on the dashboard.
 - Home Builder URL: `/home-builder`.
 
+## Dashboard Add User end-to-end test helper
+
+1. Start dashboard API/server:
+   - `python -m altinet.main dashboard --host 127.0.0.1 --port 8000`
+2. Open users API directly:
+   - `http://127.0.0.1:8000/api/users`
+   - Expect `[]` when no users exist yet.
+3. Open dashboard:
+   - `http://127.0.0.1:8000/`
+4. In **Residents / Users**, click **Add User**, fill the inline form, then click **Save User**.
+5. Confirm backend file was created:
+   - `data/altinet/users/users.json`
+6. Confirm saved user exists in `data/altinet/users/users.json` under the `"users"` array.
+7. Refresh dashboard and confirm the user still appears in the **Residents / Users** list.
+
 ## Floorplan Editor controls
 
 - **Select object**: choose **Select** mode, then click walls, rooms, doors, windows, lights, or perception pods.
