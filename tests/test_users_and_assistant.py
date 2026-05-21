@@ -53,6 +53,15 @@ def test_api_users_returns_json(monkeypatch, tmp_path):
     assert payload[0]["display_name"] == "Nora"
 
 
+def test_api_users_returns_empty_array_when_missing_file(monkeypatch, tmp_path):
+    users_path = tmp_path / "missing_users.json"
+    monkeypatch.setattr("altinet.users.storage.USER_PROFILES_PATH", users_path)
+    client = TestClient(create_app())
+    response = client.get("/api/users")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 def test_local_assistant_engine_returns_response():
     response = generate_local_response("My name is Elliot")
     assert "Thanks Elliot" in response.message.content

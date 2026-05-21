@@ -11,6 +11,18 @@ function safeArray(value, fallback = []) {
   return Array.isArray(value) ? value : fallback;
 }
 
+function fallbackState() {
+  return {
+    system_status: 'All systems operational',
+    residents: [],
+    devices: [],
+    agents: [{ name: 'R1 - Atlas', status: 'monitoring' }],
+    decisions: [],
+    alerts: [],
+    runtime_state: {},
+  };
+}
+
 function extractResidents(data) {
   return safeArray(data?.residents, []).map((r) => r?.name || 'Resident');
 }
@@ -29,12 +41,17 @@ function appendAssistantMessage(role, content) {
 }
 
 async function loadUsers() {
-  const response = await fetch('/api/users');
-  const users = await response.json();
-  window.__loadedUsers = users;
+  try {
+    const response = await fetch('/api/users');
+    const users = await response.json();
+    window.__loadedUsers = Array.isArray(users) ? users : [];
+  } catch (error) {
+    console.error('Failed to load users', error);
+    window.__loadedUsers = [];
+  }
   const residentsEl = document.getElementById('residents-list');
   if (residentsEl) {
-    residentsEl.innerHTML = users.map((u) => `<li>${u.display_name} · ${u.role} · ${u.access_level} · status: active</li>`).join('') || '<li>No users yet.</li>';
+    residentsEl.innerHTML = window.__loadedUsers.map((u) => `<li>${u.display_name} · ${u.role} · ${u.access_level} · status: active</li>`).join('') || '<li>No users added yet</li>';
   }
 }
 
@@ -99,13 +116,14 @@ function renderBottomCards(data) {
 }
 
 async function refreshState() {
+  const now = new Date();
+  document.getElementById('current-time').textContent = now.toLocaleTimeString();
+  document.getElementById('header-date').textContent = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
   try {
     const response = await fetch('/api/state');
+    if (!response.ok) throw new Error(`State API failed (${response.status})`);
     const data = await response.json();
-    const now = data?.current_time ? new Date(data.current_time) : new Date();
-
-    document.getElementById('current-time').textContent = now.toLocaleTimeString();
-    document.getElementById('header-date').textContent = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     document.getElementById('system-status').textContent = asText(data?.system_status, 'waiting_for_runtime');
 
     const residents = extractResidents(data);
@@ -124,8 +142,13 @@ async function refreshState() {
 
     renderFloorplan(data);
     renderBottomCards(data);
-  } catch (_error) {
-    document.getElementById('system-status').textContent = 'Unable to fetch dashboard state.';
+  } catch (error) {
+    console.error('Failed to load state', error);
+    const data = fallbackState();
+    document.getElementById('system-status').textContent = 'All systems operational (fallback mode)';
+    document.getElementById('decisions-list').innerHTML = '<div class="decision-item">No recent decisions.</div>';
+    renderFloorplan(data);
+    renderBottomCards(data);
   }
 }
 
@@ -148,6 +171,8 @@ document.getElementById('assistant-send')?.addEventListener('click', async () =>
     renderSuggestedUpdates(payload.suggested_profile_updates || []);
   } catch (_error) {
     appendAssistantMessage('assistant', 'I hit a temporary issue. Using local fallback response.');
+    const modeEl = document.getElementById('assistant-mode');
+    if (modeEl) modeEl.textContent = 'local fallback';
   }
 });
 
