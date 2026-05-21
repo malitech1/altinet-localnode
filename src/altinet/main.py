@@ -11,6 +11,7 @@ from altinet.context.schemas import HouseState, PossibleAction
 from altinet.decision.mock_engine import decide_action
 from altinet.decision.openai_engine import decide_action_with_openai
 from altinet.decision.prompt_builder import build_decision_prompt
+from altinet.perception.capture import capture_room_image
 
 
 DEFAULT_SAMPLE_PATH = Path("examples/sample_house_state.json")
@@ -71,6 +72,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Decision engine to use (default: mock_engine).",
     )
 
+    subparsers.add_parser(
+        "capture-room",
+        help="Capture a single image from the default webcam for perception testing.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "contextualise":
@@ -86,6 +92,12 @@ def main(argv: list[str] | None = None) -> None:
             print(_decide_from_path(args.sample_path, engine=args.engine))
         except RuntimeError as exc:
             print(f"Decision error: {exc}")
+        return
+
+    if args.command == "capture-room":
+        success, message = capture_room_image()
+        prefix = "Capture complete:" if success else "Capture skipped:"
+        print(f"{prefix} {message}")
         return
 
     print("Altinet LocalNode running")

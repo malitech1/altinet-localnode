@@ -44,3 +44,23 @@ def test_decide_command_accepts_openai_engine_flag(monkeypatch, capsys):
 
     assert '"selected_action": "do_nothing"' in captured.out
     assert '"rationale": "safe default"' in captured.out
+
+
+def test_capture_room_command_reports_success(monkeypatch, capsys):
+    monkeypatch.setattr("altinet.main.capture_room_image", lambda: (True, "Captured image saved to data/captures/latest.jpg"))
+
+    main(["capture-room"])
+    captured = capsys.readouterr()
+
+    assert "Capture complete:" in captured.out
+    assert "data/captures/latest.jpg" in captured.out
+
+
+def test_capture_room_command_reports_missing_camera(monkeypatch, capsys):
+    monkeypatch.setattr("altinet.main.capture_room_image", lambda: (False, "No camera detected or camera is unavailable."))
+
+    main(["capture-room"])
+    captured = capsys.readouterr()
+
+    assert "Capture skipped:" in captured.out
+    assert "No camera detected" in captured.out
