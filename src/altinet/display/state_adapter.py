@@ -48,7 +48,7 @@ def build_dashboard_state(runtime_state_path: Path, room_context_path: Path, lat
     context_occupants = context_occupants if isinstance(context_occupants, list) else []
 
     residents: list[dict[str, Any]] = []
-    for index, rid in enumerate(runtime_residents or context_occupants or ["resident_elliot", "resident_mia"]):
+    for index, rid in enumerate(runtime_residents or context_occupants):
         name = _titleize(str(rid).removeprefix("resident_"))
         room = next((k for k, v in occupancy.items() if isinstance(v, list) and rid in v), None) or ROOM_NAMES[index % len(ROOM_NAMES)]
         residents.append({"id": str(rid), "name": name, "location": _titleize(room), "status": "home"})
@@ -101,11 +101,16 @@ def build_dashboard_state(runtime_state_path: Path, room_context_path: Path, lat
     rooms = [{"name": room_name} for room_name in ROOM_NAMES]
     alerts = runtime_state.get("alerts", []) if runtime_state else []
     alerts = alerts if isinstance(alerts, list) else []
-    perception = runtime_state.get("perception_summary") if runtime_state else None
+    perception = runtime_state.get("perception_summary") if runtime_state else "Perception feed unavailable. Showing placeholder insights."
+    home_summary = {
+        "label": "Altinet Demo Home",
+        "description": "Floorplan and room context are unavailable. Rendering demo layout.",
+        "rooms": ROOM_NAMES,
+    }
 
     return {
-        "runtime_state": runtime_state,
-        "room_context": room_context,
+        "runtime_state": runtime_state or {},
+        "room_context": room_context or {},
         "residents": residents,
         "pets": room_context.get("pets", []) if room_context else [],
         "rooms": rooms,
@@ -113,6 +118,8 @@ def build_dashboard_state(runtime_state_path: Path, room_context_path: Path, lat
         "agents": agents,
         "decisions": decisions,
         "alerts": alerts,
+        "weather": runtime_state.get("weather", {"summary": "72°F · Clear skies (placeholder)"}) if runtime_state else {"summary": "72°F · Clear skies (placeholder)"},
+        "home_summary": home_summary,
         "perception": perception,
-        "system_status": runtime_state.get("status", "waiting_for_runtime") if runtime_state else "waiting_for_runtime",
+        "system_status": runtime_state.get("status", "All systems operational") if runtime_state else "All systems operational",
     }

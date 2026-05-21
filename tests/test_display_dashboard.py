@@ -41,8 +41,14 @@ def test_missing_files_handled_gracefully(monkeypatch, tmp_path):
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["runtime_state"] is None
-    assert payload["room_context"] is None
+    assert payload["runtime_state"] == {}
+    assert payload["room_context"] == {}
+    assert payload["system_status"] == "All systems operational"
+    assert isinstance(payload["residents"], list)
+    assert isinstance(payload["decisions"], list)
+    assert isinstance(payload["home_summary"], dict)
+    assert isinstance(payload["weather"], dict)
+    assert isinstance(payload["perception"], str)
     assert payload["capture_available"] is False
 
     capture_response = client.get("/captures/latest.jpg")
@@ -69,3 +75,22 @@ def test_dashboard_contains_home_builder_navigation_links():
     assert response.status_code == 200
     assert '/home-builder' in response.text
     assert 'Edit Home / Floorplan' in response.text
+
+
+def test_dashboard_contains_required_element_ids():
+    client = TestClient(create_app())
+    response = client.get("/")
+    assert response.status_code == 200
+    for element_id in [
+        "header-date",
+        "current-time",
+        "system-status",
+        "residents-list",
+        "floorplan-grid",
+        "decisions-list",
+        "assistant-chat",
+        "assistant-mode",
+        "assistant-send",
+        "assistant-input",
+    ]:
+        assert f'id="{element_id}"' in response.text

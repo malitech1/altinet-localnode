@@ -573,6 +573,7 @@ The dashboard now supports resident/user profile management via `/api/users`.
 - CRUD API:
   - `GET /api/users`
   - `POST /api/users`
+  - `POST /api/users/seed-demo`
   - `GET /api/users/{user_id}`
   - `PATCH /api/users/{user_id}`
   - `DELETE /api/users/{user_id}`
@@ -587,9 +588,22 @@ The dashboard includes an **AHLAN Assistant** card with:
 - greeting:
   `Hello, I’m AHLAN. I can help manage the home and learn resident preferences.`
 
-## Current limitation
+## Troubleshooting blank dashboard/loading states
 
-AHLAN responses are local placeholder responses only (no OpenAI call yet).
+If the dashboard appears blank or cards remain on `Loading...`:
+
+1. Open browser developer tools and check the console/network for failures on:
+   - `GET /api/state`
+   - `GET /api/users`
+   - `POST /api/assistant/chat`
+   - static assets under `/static/*`
+2. Run tests:
+   - `pytest tests/test_display_dashboard.py tests/test_users_and_assistant.py tests/test_assistant_openai_chat.py`
+3. Confirm API responses are valid JSON:
+   - `curl -s http://127.0.0.1:8000/api/state | jq`
+   - `curl -s http://127.0.0.1:8000/api/users | jq`
+
+The dashboard now renders resilient fallback/demo content when runtime/context/user files are missing.
 
 ## Future direction
 

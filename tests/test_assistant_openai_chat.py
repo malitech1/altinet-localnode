@@ -74,3 +74,14 @@ def test_api_assistant_chat_returns_valid_json(monkeypatch):
     assert isinstance(payload["suggested_profile_updates"], list)
     assert isinstance(payload["used_openai"], bool)
     assert "error" in payload
+
+
+def test_api_assistant_chat_works_without_openai_api_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    client = TestClient(create_app())
+    response = client.post("/api/assistant/chat", json={"message": "My name is Elliot"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["used_openai"] is False
+    assert isinstance(payload["reply"], str)
+    assert payload["reply"]

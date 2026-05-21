@@ -16,7 +16,7 @@ from altinet.assistant.openai_engine import chat_with_ahlan
 from altinet.home.models import HomeModel
 from altinet.home.storage import load_home_model, reset_to_blank_model, reset_to_demo_model, save_home_model
 from altinet.users.models import UserProfile
-from altinet.users.storage import create_user_profile, delete_user_profile, load_user_profiles, update_user_profile
+from altinet.users.storage import create_user_profile, delete_user_profile, load_user_profiles, save_user_profiles, update_user_profile
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[2]
@@ -89,6 +89,17 @@ def new_blank_home() -> dict:
 @router.get("/api/users")
 def get_users() -> list[dict]:
     return [profile.model_dump(mode="json") for profile in load_user_profiles()]
+
+
+@router.post("/api/users/seed-demo")
+def seed_demo_users() -> list[dict]:
+    profiles = load_user_profiles()
+    if not any(profile.display_name == "Elliot" for profile in profiles):
+        profiles.append(UserProfile(display_name="Elliot", preferred_name="Elliot", role="admin", access_level="owner"))
+    if not any(profile.display_name == "Guest" for profile in profiles):
+        profiles.append(UserProfile(display_name="Guest", preferred_name="Guest", role="guest", access_level="restricted"))
+    save_user_profiles(profiles)
+    return [profile.model_dump(mode="json") for profile in profiles]
 
 
 @router.post("/api/users")
