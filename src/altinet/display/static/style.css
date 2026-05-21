@@ -59,6 +59,15 @@ body {
 .stat-card h4 { margin: 0 0 8px; font-size: .84rem; color: var(--muted); }
 .stat-value { font-size: .95rem; }
 #residents-list { margin:0; padding-left:18px; }
+#open-add-user { margin-bottom: 8px; }
+.assistant-greeting { color: var(--muted); font-size: .85rem; }
+.assistant-chat { border: 1px solid rgba(149,167,209,.25); border-radius: 8px; min-height: 120px; max-height: 200px; overflow: auto; padding: 8px; }
+.chat-message { font-size: .82rem; margin-bottom: 8px; }
+.chat-message.assistant { color: var(--cyan); }
+.assistant-input-row { display: flex; gap: 8px; margin-top: 8px; }
+.assistant-input-row input { flex: 1; }
+#add-user-dialog form { display:grid; gap:8px; min-width: 320px; }
+.dialog-actions { display:flex; gap:8px; justify-content:flex-end; }
 #decisions-list .decision-item { border-top:1px solid rgba(149,167,209,.2); padding-top:8px; margin-top:8px; font-size:.84rem; color: var(--muted); }
 #decisions-list .decision-item:first-child { margin-top:0; border-top:0; padding-top:0; }
 @media (max-width: 1200px) {

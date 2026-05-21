@@ -13,6 +13,8 @@ from starlette.requests import Request
 from altinet.display.state_adapter import build_dashboard_state
 from altinet.home.models import HomeModel
 from altinet.home.storage import load_home_model, reset_to_blank_model, reset_to_demo_model, save_home_model
+from altinet.users.models import UserProfile
+from altinet.users.storage import create_user_profile, delete_user_profile, load_user_profiles, update_user_profile
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[2]
@@ -80,3 +82,37 @@ def reset_demo() -> dict:
 @router.post("/api/home/new-blank")
 def new_blank_home() -> dict:
     return reset_to_blank_model().model_dump()
+
+
+@router.get("/api/users")
+def get_users() -> list[dict]:
+    return [profile.model_dump(mode="json") for profile in load_user_profiles()]
+
+
+@router.post("/api/users")
+def create_user(payload: UserProfile) -> dict:
+    return create_user_profile(payload).model_dump(mode="json")
+
+
+@router.get("/api/users/{user_id}")
+def get_user(user_id: str) -> dict:
+    for profile in load_user_profiles():
+        if profile.id == user_id:
+            return profile.model_dump(mode="json")
+    raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.patch("/api/users/{user_id}")
+def patch_user(user_id: str, updates: dict) -> dict:
+    updated = update_user_profile(user_id, updates)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated.model_dump(mode="json")
+
+
+@router.delete("/api/users/{user_id}")
+def remove_user(user_id: str) -> dict:
+    deleted = delete_user_profile(user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"deleted": True, "user_id": user_id}

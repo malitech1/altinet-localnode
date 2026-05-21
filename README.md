@@ -549,3 +549,34 @@ Regression checklist for current editor reliability fixes:
 - [ ] Select perception pod shows pod properties.
 - [ ] Duplicate light placement is rejected.
 - [ ] Overlapping door/window placement is rejected.
+
+## User Profiles
+
+The dashboard now supports resident/user profile management via `/api/users`.
+
+- Stored at `data/users/user_profiles.json`.
+- Profile fields include role, access level, preferred name, optional notes/pronouns, and placeholders for preferences/routines.
+- CRUD API:
+  - `GET /api/users`
+  - `POST /api/users`
+  - `GET /api/users/{user_id}`
+  - `PATCH /api/users/{user_id}`
+  - `DELETE /api/users/{user_id}`
+
+## AHLAN Assistant
+
+The dashboard includes an **AHLAN Assistant** card with:
+
+- local chat history panel,
+- message input,
+- send button,
+- greeting:
+  `Hello, I’m AHLAN. I can help manage the home and learn resident preferences.`
+
+## Current limitation
+
+AHLAN responses are local placeholder responses only (no OpenAI call yet).
+
+## Future direction
+
+Planned next steps include OpenAI-powered conversation, preference extraction, and user-approved profile learning.
