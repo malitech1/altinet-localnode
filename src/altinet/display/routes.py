@@ -11,6 +11,9 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from altinet.display.state_adapter import build_dashboard_state
+from altinet.home.default_home import create_default_home_model
+from altinet.home.models import HomeModel
+from altinet.home.storage import load_home_model, reset_to_demo_model, save_home_model
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[2]
@@ -53,3 +56,23 @@ def latest_capture() -> FileResponse:
     if not CAPTURE_PATH.exists():
         raise HTTPException(status_code=404, detail="No captured image available yet.")
     return FileResponse(CAPTURE_PATH)
+
+
+@router.get("/home-builder")
+def home_builder(request: Request):
+    return templates.TemplateResponse(request=request, name="home_builder.html", context={})
+
+
+@router.get("/api/home")
+def get_home() -> dict:
+    return load_home_model().model_dump()
+
+
+@router.post("/api/home")
+def save_home(payload: HomeModel) -> dict:
+    return save_home_model(payload).model_dump()
+
+
+@router.post("/api/home/reset-demo")
+def reset_demo() -> dict:
+    return reset_to_demo_model().model_dump()
