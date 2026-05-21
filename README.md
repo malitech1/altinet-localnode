@@ -506,3 +506,5 @@ How to use:
 - Draw walls in **Draw Wall** mode (choose internal/external wall type).
 - Define rooms in **Define Room** mode, then click **Finish Room** to name/type the room polygon.
 - Place doors/windows in **Place Door** / **Place Window** mode; they snap to nearby walls and store `wall_id` + `position_along_wall_m`.
+- Click handling is mode-specific: **Select**, **Draw Wall**, **Erase**, **Define Room**, **Place Door**, **Place Window**, **Place Light**, **Place Perception Pod**, and **Pan** each route clicks through the same SVG coordinate helper.
+- Status/debug line now shows current mode, last click coordinates, and last action taken to help verify editor interactions quickly.
