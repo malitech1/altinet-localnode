@@ -6,6 +6,8 @@ label { display: grid; gap: 4px; font-size: 14px; }
 input, select { padding: 8px; border-radius: 6px; border: 1px solid #374151; background: #0f172a; color: #e5e7eb; }
 button { padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer; }
 .actions, .toolbar, .toolbar-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.zoom-controls { display: inline-flex; gap: 6px; align-items: center; margin-left: 8px; }
+#zoom-display { font-weight: 700; color: #bfdbfe; min-width: 48px; }
 .toolbar { margin: 0 0 8px; }
 .toolbar button.active { background: #22c55e; color: #052e16; }
 #mode-status { font-size: 13px; color: #93c5fd; }
@@ -13,6 +15,8 @@ button { padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer; }
 #floorplan [data-type] { pointer-events: all; cursor: pointer; }
 #json-preview { background: #0f172a; padding: 12px; border-radius: 8px; max-height: 280px; overflow: auto; font-size: 12px; }
 #selection-panel { margin: 8px 0; background: #0f172a; border: 1px solid #334155; padding: 8px; border-radius: 8px; font-size: 13px; }
+#selection-panel input[readonly] { opacity: 0.8; }
+.panel-actions { display: flex; gap: 8px; margin-top: 8px; }
 .back-link { display:inline-block; margin: 6px 0 14px; color: #93c5fd; text-decoration: none; border: 1px solid #374151; padding: 8px 10px; border-radius: 6px; }
 .back-link:hover { background: #1f2937; }
 

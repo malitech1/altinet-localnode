@@ -524,3 +524,15 @@ How to use:
 - **Place Perception Pod** adds a visible pod marker immediately at the clicked SVG coordinate and stores `x/y`, `orientation_degrees`, `camera_enabled`, and `microphone_enabled`.
 - Click handling is mode-specific: **Select**, **Draw Wall**, **Erase**, **Define Room**, **Place Door**, **Place Window**, **Place Light**, **Place Perception Pod**, and **Pan** each route clicks through the same SVG coordinate helper (`getSvgPoint`).
 - Status/debug line now shows current mode, last click coordinates, and last action taken to help verify editor interactions quickly.
+- Select mode is the single edit/inspect mode: click wall/room/door/window/light/perception pod to highlight and open the properties panel; click empty background to clear selection.
+- Door/window properties panel supports in-place editing (`position_along_wall_m`, `width_m`, `height_m` for windows, `swing_direction` for doors, optional name) with **Apply Changes**, **Delete Selected**, and **Close**.
+- Zoom controls (**Zoom In**, **Zoom Out**, **Reset Zoom**) change the SVG `viewBox` and show live zoom percentage.
+- Grid and ruler labels are zoom-aware and switch scale from metres to centimetres.
+
+Manual verification checklist:
+
+1. Select a door, change `width_m`, click **Apply Changes**, and confirm the rendered opening width + JSON preview update immediately.
+2. Select a window, change `width_m` and `height_m`, click **Apply Changes**, and confirm immediate visual + JSON update.
+3. Use **Zoom In/Out/Reset** and verify zoom percentage updates while floorplan objects remain selectable.
+4. Confirm grid scale label/ruler transitions across zoom levels (for example `Grid: 1 m`, `Grid: 50 cm`, `Grid: 10 cm`, `Grid: 1 cm`).
+5. While zoomed in/out, place walls/doors/windows/lights/pods and verify placement/snapping coordinates remain accurate.
