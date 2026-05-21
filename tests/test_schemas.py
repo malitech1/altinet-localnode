@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from src.altinet.context.schemas import (
+from altinet.context.schemas import (
     DecisionRequest,
     DecisionResponse,
     Device,
