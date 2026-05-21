@@ -15,3 +15,5 @@ button { padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer; }
 #selection-panel { margin: 8px 0; background: #0f172a; border: 1px solid #334155; padding: 8px; border-radius: 8px; font-size: 13px; }
 .back-link { display:inline-block; margin: 6px 0 14px; color: #93c5fd; text-decoration: none; border: 1px solid #374151; padding: 8px 10px; border-radius: 6px; }
 .back-link:hover { background: #1f2937; }
+
+#floorplan .floor-item, #floorplan .floor-item * { pointer-events: all; cursor: pointer; }

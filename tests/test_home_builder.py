@@ -102,3 +102,40 @@ def test_deleting_wall_cleans_attached_doors_windows():
 def test_home_builder_page_returns_200():
     client = TestClient(create_app())
     assert client.get('/home-builder').status_code == 200
+
+
+def test_home_model_persists_lights_and_pods_and_room_points(tmp_path):
+    path = tmp_path / "home_model.json"
+    model = create_blank_home_model()
+    model.room_regions.append({"id": "region-test", "floor_id": "floor-ground", "name": "Lab", "room_type": "office", "points": [[0.0, 0.0], [2.0, 0.0], [2.0, 2.0]]})
+    model.lights.append({"id": "light-test", "room_id": None, "floor_id": "floor-ground", "name": "Light 1", "x": 1.0, "y": 1.5, "type": "ceiling"})
+    model.perception_pods.append({"id": "pod-test", "name": "Pod 1", "floor_id": "floor-ground", "x": 1.5, "y": 1.0, "orientation_degrees": 45.0, "camera_enabled": True, "microphone_enabled": False, "sensors": ["camera"]})
+
+    save_home_model(model, path)
+    loaded = load_home_model(path)
+
+    assert loaded.lights[0].x == 1.0
+    assert loaded.lights[0].y == 1.5
+    assert loaded.perception_pods[0].orientation_degrees == 45.0
+    assert loaded.perception_pods[0].camera_enabled is True
+    assert loaded.perception_pods[0].microphone_enabled is False
+    assert loaded.room_regions[0].points == [[0.0, 0.0], [2.0, 0.0], [2.0, 2.0]]
+
+
+def test_api_returns_lights_and_perception_pods(monkeypatch, tmp_path):
+    path = tmp_path / "home_model.json"
+    model = create_blank_home_model()
+    model.lights.append({"id": "light-api", "room_id": None, "floor_id": "floor-ground", "name": "API Light", "x": 3.0, "y": 2.0, "type": "ceiling"})
+    model.perception_pods.append({"id": "pod-api", "name": "API Pod", "floor_id": "floor-ground", "x": 4.0, "y": 2.5, "orientation_degrees": 90.0, "camera_enabled": True, "microphone_enabled": True, "sensors": ["camera", "microphone"]})
+    save_home_model(model, path)
+
+    monkeypatch.setattr("altinet.display.routes.load_home_model", lambda: load_home_model(path))
+    monkeypatch.setattr("altinet.display.routes.save_home_model", lambda m: save_home_model(m, path))
+    monkeypatch.setattr("altinet.display.routes.reset_to_demo_model", lambda: save_home_model(create_default_home_model(), path))
+    monkeypatch.setattr("altinet.display.routes.reset_to_blank_model", lambda: save_home_model(create_blank_home_model(), path))
+
+    client = TestClient(create_app())
+    body = client.get('/api/home').json()
+
+    assert any(light["id"] == "light-api" for light in body["lights"])
+    assert any(pod["id"] == "pod-api" for pod in body["perception_pods"])
