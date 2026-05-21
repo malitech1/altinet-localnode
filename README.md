@@ -608,3 +608,17 @@ The dashboard now renders resilient fallback/demo content when runtime/context/u
 ## Future direction
 
 Planned next steps include OpenAI-powered conversation, preference extraction, and user-approved profile learning.
+
+## LocalNode Backend Store
+
+- JSON backend files are in `data/altinet/`:
+  - `users/users.json`
+  - `home/home.json`
+  - `agents/agents.json`
+  - `devices/devices.json`
+  - `context/user_context.json`
+  - `context/house_context.json`
+- Seed demo data with:
+  - `python -m altinet.main seed-demo-data`
+- Access levels include resident, guest, service, dependent, animal, unknown, and threat-oriented levels (including `intruder`).
+- Dashboard state now includes a registry snapshot from `/api/registry`, and `/api/state` exposes registry users for display consumption.
