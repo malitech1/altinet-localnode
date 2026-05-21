@@ -56,7 +56,7 @@ class HouseState(BaseModel):
     user_preferences: dict[str, str] = Field(default_factory=dict)
 
 
-class PossibleAction(str, StrEnum):
+class PossibleAction(StrEnum):
     TURN_LIGHT_ON = "turn_light_on"
     TURN_LIGHT_OFF = "turn_light_off"
     DO_NOTHING = "do_nothing"
