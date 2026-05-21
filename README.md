@@ -504,7 +504,10 @@ How to use:
 - Grid units are in **metres** in the JSON model.
 - Scale: **1 grid square = 0.5 m** (shown on the editor canvas).
 - Draw walls in **Draw Wall** mode (choose internal/external wall type).
-- Define rooms in **Define Room** mode, then click **Finish Room** to name/type the room polygon.
+- Define rooms in **Define Room** mode with live preview: each click adds visible point markers, temporary edges, and translucent area fill (after 3+ points), then click **Finish Room** to name/type and save the room polygon.
+- Use **Clear Room Draft** to cancel unfinished room polygons.
 - Place doors/windows in **Place Door** / **Place Window** mode; they snap to nearby walls and store `wall_id` + `position_along_wall_m`.
-- Click handling is mode-specific: **Select**, **Draw Wall**, **Erase**, **Define Room**, **Place Door**, **Place Window**, **Place Light**, **Place Perception Pod**, and **Pan** each route clicks through the same SVG coordinate helper.
+- **Place Light** adds a visible light marker immediately at the clicked SVG coordinate and stores metre-based `x/y` coordinates in the HomeModel.
+- **Place Perception Pod** adds a visible pod marker immediately at the clicked SVG coordinate and stores `x/y`, `orientation_degrees`, `camera_enabled`, and `microphone_enabled`.
+- Click handling is mode-specific: **Select**, **Draw Wall**, **Erase**, **Define Room**, **Place Door**, **Place Window**, **Place Light**, **Place Perception Pod**, and **Pan** each route clicks through the same SVG coordinate helper (`getSvgPoint`).
 - Status/debug line now shows current mode, last click coordinates, and last action taken to help verify editor interactions quickly.
