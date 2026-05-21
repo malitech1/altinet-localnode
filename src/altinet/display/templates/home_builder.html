@@ -18,7 +18,7 @@
           <label>Boundary Depth (m) <input id="boundary_depth" type="number" step="0.1" /></label>
           <label>House Width (m) <input id="house_width" type="number" step="0.1" /></label>
           <label>House Depth (m) <input id="house_depth" type="number" step="0.1" /></label>
-          <div class="actions"><button type="submit">Save</button><button id="reset-demo" type="button">Reset Demo</button><button id="clear-floor" type="button">Clear Selected Floor</button></div>
+          <div class="actions"><button type="submit">Save</button><button id="reset-demo" type="button">Reset Demo</button><button id="clear-floor" type="button">Clear Selected Floor</button><button id="delete-floor" type="button">Delete Selected Floor</button></div>
         </form>
         <div>
           <div class="toolbar" id="toolbar"></div>
@@ -26,10 +26,15 @@
             <label>Floor
               <select id="floor-select"></select>
             </label>
+            <label>Wall Type
+              <select id="wall-type-select"><option value="internal">Internal</option><option value="external">External</option></select>
+            </label>
             <button id="add-floor" type="button">+ Add Floor</button>
             <button id="finish-room" type="button">Finish Room</button>
+            <button id="delete-selected" type="button">Delete Selected</button>
             <span id="mode-status"></span>
           </div>
+          <div id="selection-panel">No object selected.</div>
           <svg id="floorplan" viewBox="0 0 700 450"></svg>
           <pre id="json-preview"></pre>
         </div>
