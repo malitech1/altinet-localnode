@@ -11,6 +11,9 @@ from altinet.context.schemas import HouseState, PossibleAction
 from altinet.decision.mock_engine import decide_action
 from altinet.decision.openai_engine import decide_action_with_openai
 from altinet.decision.prompt_builder import build_decision_prompt
+from altinet.events.models import PersonEnteredRoom, TimeTick
+from altinet.events.processor import EventProcessor
+from altinet.events.queue import EventQueue
 from altinet.perception.capture import capture_room_image
 from altinet.perception.room_context import analyse_room_image_with_openai
 
@@ -91,6 +94,12 @@ def main(argv: list[str] | None = None) -> None:
         help="Path to input room image, e.g. data/captures/latest.jpg.",
     )
 
+
+    subparsers.add_parser(
+        "simulate-events",
+        help="Simulate a sequence of events and print contextual decision output.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "contextualise":
@@ -106,6 +115,11 @@ def main(argv: list[str] | None = None) -> None:
             print(_decide_from_path(args.sample_path, engine=args.engine))
         except RuntimeError as exc:
             print(f"Decision error: {exc}")
+        return
+
+
+    if args.command == "simulate-events":
+        print(_simulate_events_demo())
         return
 
     if args.command == "capture-room":
@@ -159,3 +173,48 @@ def _decide_from_path(sample_path: Path, *, engine: str = "mock_engine") -> str:
 
 if __name__ == "__main__":
     main()
+
+
+def _simulate_events_demo() -> str:
+    with DEFAULT_SAMPLE_PATH.open("r", encoding="utf-8") as fh:
+        house_state = HouseState.model_validate(json.load(fh))
+
+    queue = EventQueue()
+    processor = EventProcessor()
+
+    simulated_time = house_state.current_time.replace(hour=20, minute=0, second=0, microsecond=0)
+    queue.push(
+        PersonEnteredRoom(
+            timestamp=simulated_time,
+            source="simulation",
+            confidence=0.99,
+            person_id="resident_elliot",
+            room_id="bedroom",
+            metadata={"demo": "elliot_enters_bedroom"},
+        )
+    )
+    queue.push(
+        TimeTick(
+            timestamp=simulated_time,
+            source="clock",
+            confidence=1.0,
+            metadata={"tick": "8pm"},
+        )
+    )
+
+    processor.process_all(house_state, queue)
+    context = processor.contextualise(
+        house_state,
+        events=["Elliot entered bedroom at 8:00 PM"],
+    )
+    decision = processor.decide(house_state)
+
+    return "\n".join(
+        [
+            "Simulated event: Elliot enters bedroom at 8:00 PM",
+            "Updated context:",
+            context,
+            "Mock decision:",
+            decision.model_dump_json(indent=2),
+        ]
+    )
