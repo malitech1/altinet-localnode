@@ -16,6 +16,7 @@ from altinet.assistant.openai_engine import chat_with_ahlan
 from altinet.home.models import HomeModel
 from altinet.home.storage import load_home_model, reset_to_blank_model, reset_to_demo_model, save_home_model
 from altinet.domain.users import UserProfile
+from altinet.domain.access import AccessLevel
 from altinet.domain.context import UserPreference, UserRoutine, UserContext
 from altinet.store.registry import RegistryService
 from altinet.store.repositories.users_repository import (
@@ -65,6 +66,7 @@ def get_state() -> dict:
         "perception_summary": normalized["perception"],
         "registry": registry,
         "users": registry.get("users", []),
+        "registry_available": True,
     }
 
 
@@ -111,8 +113,26 @@ def get_users() -> list[dict]:
 
 
 @router.post("/api/users")
-def create_user(payload: UserProfile) -> dict:
-    return create_repo_user(payload).model_dump(mode="json")
+def create_user(payload: UserCreateRequest) -> dict:
+    return create_repo_user(_build_user_profile(payload)).model_dump(mode="json")
+
+
+@router.post("/api/registry/seed-demo")
+def seed_demo_registry_users() -> dict:
+    registry = RegistryService()
+    demo_profiles = [
+        UserCreateRequest(display_name="Elliot", preferred_name="Elliot", access_level=AccessLevel.RESIDENT_OWNER, relationship_to_home="owner", contextual_information="Primary resident and decision maker."),
+        UserCreateRequest(display_name="Mia", preferred_name="Mia", access_level=AccessLevel.RESIDENT_STANDARD, relationship_to_home="resident", contextual_information="Often in bedroom during bedtime routine."),
+        UserCreateRequest(display_name="Guest Family", access_level=AccessLevel.GUEST_FAMILY, relationship_to_home="guest"),
+    ]
+    created = 0
+    existing_names = {u.display_name for u in registry.users.list_users()}
+    for profile in demo_profiles:
+        if profile.display_name in existing_names:
+            continue
+        create_repo_user(_build_user_profile(profile))
+        created += 1
+    return {"ok": True, "created": created, "users": [u.model_dump(mode="json") for u in registry.users.list_users()]}
 
 
 @router.get("/api/users/{user_id}")
@@ -138,6 +158,30 @@ def remove_user(user_id: str) -> dict:
         raise HTTPException(status_code=404, detail="User not found")
     return {"deleted": True, "user_id": user_id}
 
+
+
+
+class UserCreateRequest(BaseModel):
+    display_name: str = Field(min_length=1)
+    access_level: AccessLevel
+    preferred_name: str | None = None
+    relationship_to_home: str | None = None
+    notes: str | None = None
+    contextual_information: str | None = None
+
+
+def _build_user_profile(payload: UserCreateRequest) -> UserProfile:
+    context_items = []
+    if payload.contextual_information:
+        context_items.append(UserContext(summary=payload.contextual_information))
+    return UserProfile(
+        display_name=payload.display_name,
+        access_level=payload.access_level,
+        preferred_name=payload.preferred_name,
+        relationship_to_home=payload.relationship_to_home,
+        notes=payload.notes or "",
+        contextual_information=context_items,
+    )
 
 class AssistantChatRequest(BaseModel):
     message: str = Field(min_length=1)

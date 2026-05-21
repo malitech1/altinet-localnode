@@ -51,10 +51,40 @@ async function loadUsers() {
   }
   const residentsEl = document.getElementById('residents-list');
   if (residentsEl) {
-    residentsEl.innerHTML = window.__loadedUsers.map((u) => `<li>${u.display_name} · ${u.role} · ${u.access_level} · status: active</li>`).join('') || '<li>No users added yet</li>';
+    residentsEl.innerHTML = renderUsers(window.__loadedUsers);
   }
 }
 
+
+
+
+function firstContextLine(user) {
+  if (!user) return '';
+  if (typeof user.notes === 'string' && user.notes.trim()) return user.notes.trim();
+  const context = safeArray(user.contextual_information, []);
+  if (context.length > 0) {
+    const note = context[0]?.summary;
+    if (typeof note === 'string' && note.trim()) return note.trim();
+  }
+  return '';
+}
+
+function renderUsers(users) {
+  const residentsEl = document.getElementById('residents-list');
+  if (!residentsEl) return;
+  if (!users || users.length === 0) {
+    residentsEl.innerHTML = '<li class="empty-users">No users added yet. Run seed-demo-data or add a user.</li>';
+    return;
+  }
+  residentsEl.innerHTML = users.map((u) => {
+    const context = firstContextLine(u);
+    return `<li class="user-card">
+      <div class="user-row"><strong class="user-name">${u.display_name}</strong><span class="badge access">${u.access_level}</span><span class="badge category">${u.category || 'unknown'}</span></div>
+      <div class="user-meta">${u.preferred_name ? `Preferred: ${u.preferred_name} · ` : ''}${u.relationship_to_home ? `Relationship: ${u.relationship_to_home} · ` : ''}Status: ${u.status || 'active'}</div>
+      ${context ? `<div class="user-context">${context}</div>` : ''}
+    </li>`;
+  }).join('');
+}
 
 function selectedUserId() {
   const first = (window.__loadedUsers || [])[0];
@@ -184,13 +214,20 @@ document.getElementById('add-user-form')?.addEventListener('submit', async (even
   const form = event.target;
   const payload = {
     display_name: form.display_name.value,
-    preferred_name: form.preferred_name.value,
-    role: form.role.value,
+    preferred_name: form.preferred_name.value || null,
     access_level: form.access_level.value,
+    relationship_to_home: form.relationship_to_home.value || null,
     notes: form.notes.value || null,
+    contextual_information: form.contextual_information.value || null,
   };
   await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   dialog?.close();
   form.reset();
   loadUsers();
+});
+
+
+document.getElementById('seed-demo-users')?.addEventListener('click', async () => {
+  await fetch('/api/registry/seed-demo', { method: 'POST' });
+  await loadUsers();
 });

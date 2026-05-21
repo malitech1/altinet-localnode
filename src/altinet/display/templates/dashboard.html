@@ -65,7 +65,7 @@
       <aside class="panel sidebar-right">
         <section class="side-card">
           <h3>Residents / Users</h3>
-          <button id="open-add-user" type="button">Add User</button>
+          <div class="user-actions"><button id="open-add-user" type="button">Add User</button><button id="seed-demo-users" type="button">Seed Demo Users</button></div>
           <ul id="residents-list"></ul>
         </section>
         <section class="side-card">
@@ -89,20 +89,16 @@
       <form id="add-user-form" method="dialog">
         <h3>Add User</h3>
         <label>Display Name <input name="display_name" required /></label>
-        <label>Preferred Name <input name="preferred_name" required /></label>
-        <label>Role
-          <select name="role">
-            <option value="resident">resident</option><option value="guest">guest</option><option value="child">child</option>
-            <option value="admin">admin</option><option value="service_person">service_person</option><option value="unknown">unknown</option>
-          </select>
-        </label>
-        <label>Access Level
+        <label>Preferred Name <input name="preferred_name" /></label>
+                <label>Access Level
           <select name="access_level">
-            <option value="owner">owner</option><option value="trusted_resident">trusted_resident</option><option value="resident">resident</option>
-            <option value="guest">guest</option><option value="restricted">restricted</option><option value="blocked">blocked</option>
+            <option value="resident_owner">resident_owner</option><option value="resident_admin">resident_admin</option><option value="resident_standard">resident_standard</option>
+            <option value="guest_family">guest_family</option><option value="guest_friend">guest_friend</option><option value="guest_visitor">guest_visitor</option><option value="service_person">service_person</option><option value="child">child</option><option value="pet">pet</option><option value="unknown">unknown</option><option value="restricted">restricted</option><option value="blocked">blocked</option><option value="intruder">intruder</option>
           </select>
         </label>
+        <label>Relationship to Home <input name="relationship_to_home" /></label>
         <label>Notes <textarea name="notes"></textarea></label>
+        <label>Contextual Information <textarea name="contextual_information"></textarea></label>
         <div class="dialog-actions"><button type="submit">Save User</button><button type="button" id="cancel-add-user">Cancel</button></div>
       </form>
     </dialog>

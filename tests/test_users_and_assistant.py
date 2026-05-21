@@ -3,6 +3,7 @@ from pydantic import ValidationError
 
 from altinet.assistant.local_engine import generate_local_response
 from altinet.display.app import create_app
+from altinet.store.repositories.users_repository import UsersRepository
 from altinet.users.models import UserProfile
 from altinet.users.storage import create_user_profile, delete_user_profile, load_user_profiles, save_user_profiles, update_user_profile
 
@@ -40,10 +41,10 @@ def test_create_update_delete_user_profile(tmp_path):
 
 def test_api_users_returns_json(monkeypatch, tmp_path):
     users_path = tmp_path / "users.json"
-    monkeypatch.setattr("altinet.users.storage.USER_PROFILES_PATH", users_path)
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
 
     client = TestClient(create_app())
-    create_response = client.post("/api/users", json={"display_name": "Nora", "preferred_name": "Nora", "role": "resident", "access_level": "resident"})
+    create_response = client.post("/api/users", json={"display_name": "Nora", "preferred_name": "Nora", "access_level": "resident_standard"})
     assert create_response.status_code == 200
 
     response = client.get("/api/users")
@@ -55,7 +56,7 @@ def test_api_users_returns_json(monkeypatch, tmp_path):
 
 def test_api_users_returns_empty_array_when_missing_file(monkeypatch, tmp_path):
     users_path = tmp_path / "missing_users.json"
-    monkeypatch.setattr("altinet.users.storage.USER_PROFILES_PATH", users_path)
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
     client = TestClient(create_app())
     response = client.get("/api/users")
     assert response.status_code == 200
@@ -65,3 +66,38 @@ def test_api_users_returns_empty_array_when_missing_file(monkeypatch, tmp_path):
 def test_local_assistant_engine_returns_response():
     response = generate_local_response("My name is Elliot")
     assert "Thanks Elliot" in response.message.content
+
+
+def test_post_seed_demo_creates_demo_users(monkeypatch, tmp_path):
+    users_path = tmp_path / "users.json"
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
+    client = TestClient(create_app())
+    response = client.post("/api/registry/seed-demo")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is True
+    assert len(body["users"]) >= 1
+
+
+def test_api_state_includes_users(monkeypatch, tmp_path):
+    users_path = tmp_path / "users.json"
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
+    client = TestClient(create_app())
+    client.post("/api/users", json={"display_name": "State User", "access_level": "resident_standard"})
+    response = client.get("/api/state")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "users" in payload
+    assert "residents" in payload
+    assert "system_status" in payload
+    assert payload["registry_available"] is True
+
+
+def test_post_users_creates_backend_user(monkeypatch, tmp_path):
+    users_path = tmp_path / "users.json"
+    monkeypatch.setattr("altinet.store.repositories.users_repository._repo", UsersRepository(users_path))
+    client = TestClient(create_app())
+    response = client.post("/api/users", json={"display_name": "Casey", "access_level": "guest_visitor", "notes": "temporary"})
+    assert response.status_code == 200
+    stored = UsersRepository(users_path).list_users()
+    assert any(u.display_name == "Casey" for u in stored)

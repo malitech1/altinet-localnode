@@ -622,3 +622,13 @@ Planned next steps include OpenAI-powered conversation, preference extraction, a
   - `python -m altinet.main seed-demo-data`
 - Access levels include resident, guest, service, dependent, animal, unknown, and threat-oriented levels (including `intruder`).
 - Dashboard state now includes a registry snapshot from `/api/registry`, and `/api/state` exposes registry users for display consumption.
+
+
+### Dashboard users from LocalNode registry
+
+1. Run the dashboard:
+   - `uvicorn altinet.display.app:create_app --reload`
+2. Open `http://127.0.0.1:8000`.
+3. In **Residents / Users**, click **Seed Demo Users**.
+4. Demo users should appear in the Residents / Users card immediately.
+5. User profiles are stored in `data/altinet/users/users.json`.

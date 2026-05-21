@@ -94,3 +94,12 @@ def test_dashboard_contains_required_element_ids():
         "assistant-input",
     ]:
         assert f'id="{element_id}"' in response.text
+
+
+def test_dashboard_contains_user_list_and_seed_button():
+    client = TestClient(create_app())
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "id=\"residents-list\"" in response.text
+    assert "Seed Demo Users" in response.text

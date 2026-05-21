@@ -82,3 +82,15 @@ body {
 .builder-cta p { color: var(--muted); margin-top: 6px; }
 .builder-link { display: inline-block; margin-top: 8px; padding: 10px 14px; border-radius: 10px; text-decoration: none; color: var(--text); border: 1px solid rgba(72,242,163,.45); background: rgba(72,242,163,.15); font-weight: 600; }
 .builder-link:hover { background: rgba(72,242,163,.24); }
+
+.user-actions { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+#residents-list { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.user-card { border:1px solid rgba(149,167,209,.25); border-radius:10px; padding:8px; background: rgba(7,13,26,.5); }
+.user-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.user-name { font-size:.95rem; }
+.badge { font-size:.68rem; padding:2px 7px; border-radius:999px; border:1px solid transparent; }
+.badge.access { border-color: rgba(66,216,255,.5); color: var(--cyan); }
+.badge.category { border-color: rgba(169,123,255,.5); color: var(--purple); }
+.user-meta { margin-top:4px; color: var(--muted); font-size:.75rem; }
+.user-context { margin-top:4px; color: #c8d7ff; font-size:.75rem; }
+.empty-users { color: var(--muted); font-size:.85rem; }
