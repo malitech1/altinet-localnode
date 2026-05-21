@@ -135,6 +135,14 @@ Troubleshooting webcam permissions (Windows):
 - Close other apps using the webcam before running Altinet commands.
 - In PyCharm, restart the run configuration/interpreter after granting permissions.
 
+## Dashboard access
+
+- Open the main dashboard at `/`.
+- Access Home Builder from the left sidebar (**Home Builder**) or the **Edit Home / Floorplan** button on the dashboard.
+- Home Builder URL: `/home-builder`.
+
+---
+
 ## Dashboard floorplan note
 
 The current dashboard floorplan is a **mock visual layer** rendered in CSS/JavaScript for UI prototyping. It displays room tiles and overlays residents/devices/agents from `/api/state` when available, with placeholders when runtime files are missing. Real editable floorplan JSON integration is planned for a later phase.

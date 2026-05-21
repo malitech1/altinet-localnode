@@ -10,3 +10,6 @@ button { padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer; }
 #json-preview { background: #0f172a; padding: 12px; border-radius: 8px; max-height: 280px; overflow: auto; font-size: 12px; }
 .light.on { fill: #facc15; }
 .light.off { fill: #475569; }
+
+.back-link { display:inline-block; margin: 6px 0 14px; color: #93c5fd; text-decoration: none; border: 1px solid #374151; padding: 8px 10px; border-radius: 6px; }
+.back-link:hover { background: #1f2937; }
