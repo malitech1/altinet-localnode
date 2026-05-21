@@ -1,0 +1,44 @@
+{
+  "residents": [
+    {
+      "id": "resident_elliot",
+      "name": "Elliot",
+      "current_room_id": "bedroom",
+      "preferences": {
+        "bedroom_light_at_night": "on"
+      }
+    }
+  ],
+  "pets": [],
+  "rooms": [
+    {
+      "id": "bedroom",
+      "name": "Bedroom",
+      "occupied_by_resident_ids": ["resident_elliot"],
+      "occupied_by_pet_ids": [],
+      "light_on": false
+    }
+  ],
+  "devices": [
+    {
+      "id": "bedroom_light",
+      "room_id": "bedroom",
+      "device_type": "light",
+      "is_on": false
+    }
+  ],
+  "sensor_readings": [
+    {
+      "sensor_id": "bedroom_motion",
+      "room_id": "bedroom",
+      "metric": "motion",
+      "value": 1,
+      "unit": "bool",
+      "recorded_at": "2026-05-21T20:00:00+00:00"
+    }
+  ],
+  "current_time": "2026-05-21T20:00:00+00:00",
+  "user_preferences": {
+    "elliot:bedroom_light_at_night": "on"
+  }
+}
