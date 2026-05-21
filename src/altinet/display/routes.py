@@ -6,11 +6,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from altinet.display.state_adapter import build_dashboard_state
+from altinet.assistant.openai_engine import chat_with_ahlan
 from altinet.home.models import HomeModel
 from altinet.home.storage import load_home_model, reset_to_blank_model, reset_to_demo_model, save_home_model
 from altinet.users.models import UserProfile
@@ -116,3 +118,14 @@ def remove_user(user_id: str) -> dict:
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
     return {"deleted": True, "user_id": user_id}
+
+
+class AssistantChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+    user_id: str | None = None
+
+
+@router.post("/api/assistant/chat")
+def assistant_chat(payload: AssistantChatRequest) -> dict:
+    result = chat_with_ahlan(payload.message, user_id=payload.user_id, recent_messages=[])
+    return result.model_dump()

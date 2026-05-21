@@ -1,0 +1,76 @@
+from fastapi.testclient import TestClient
+
+from altinet.assistant.openai_engine import chat_with_ahlan
+from altinet.assistant.prompt_builder import build_ahlan_prompt
+from altinet.display.app import create_app
+from altinet.users.models import UserPreference, UserProfile, UserRoutine
+
+
+class _MockResponse:
+    output_text = '{"reply":"Hello from OpenAI","suggested_profile_updates":[{"type":"preference","summary":"Likes warm lighting","confidence":0.8}]}'
+
+
+class _MockClient:
+    class responses:
+        @staticmethod
+        def create(**_kwargs):
+            return _MockResponse()
+
+
+def test_prompt_builder_includes_user_profile_fields():
+    profile = UserProfile(
+        display_name="Nora Vega",
+        preferred_name="Nora",
+        role="resident",
+        access_level="trusted_resident",
+        notes="Night shift worker",
+        preferences=[UserPreference(key="light_temp", value="warm")],
+        routines=[UserRoutine(name="Bedtime", schedule="22:00")],
+    )
+    prompt = build_ahlan_prompt(profile, {"home_name": "MyHome"}, [{"role": "user", "content": "hi"}])
+
+    assert "Nora Vega" in prompt
+    assert "preferred_name" in prompt
+    assert "trusted_resident" in prompt
+    assert "light_temp" in prompt
+    assert "Bedtime" in prompt
+
+
+def test_missing_api_key_falls_back_locally(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    result = chat_with_ahlan("My name is Sam")
+    assert result.used_openai is False
+    assert "Thanks Sam" in result.reply
+
+
+def test_mocked_openai_response_returns_reply(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setattr("altinet.assistant.openai_engine.OpenAI", lambda api_key: _MockClient())
+    result = chat_with_ahlan("hello")
+    assert result.used_openai is True
+    assert result.reply == "Hello from OpenAI"
+
+
+def test_suggested_profile_updates_are_parsed(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setattr("altinet.assistant.openai_engine.OpenAI", lambda api_key: _MockClient())
+    result = chat_with_ahlan("I like warm lights")
+    assert len(result.suggested_profile_updates) == 1
+    assert result.suggested_profile_updates[0].type == "preference"
+
+
+def test_api_assistant_chat_returns_valid_json(monkeypatch):
+    monkeypatch.setattr(
+        "altinet.display.routes.chat_with_ahlan",
+        lambda message, user_id, recent_messages: type(
+            "Result", (), {"model_dump": lambda self: {"reply": "ok", "suggested_profile_updates": [], "used_openai": False, "error": None}}
+        )(),
+    )
+    client = TestClient(create_app())
+    response = client.post("/api/assistant/chat", json={"message": "hello", "user_id": "u1"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["reply"] == "ok"
+    assert isinstance(payload["suggested_profile_updates"], list)
+    assert isinstance(payload["used_openai"], bool)
+    assert "error" in payload

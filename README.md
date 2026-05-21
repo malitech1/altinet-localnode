@@ -162,6 +162,20 @@ The current dashboard floorplan is a **mock visual layer** rendered in CSS/JavaS
 
 ---
 
+
+## AHLAN OpenAI chat setup
+
+1. Copy `.env.example` to `.env` and set:
+   - `OPENAI_API_KEY=your_api_key_here`
+   - `AHLAN_MODEL=gpt-5.5-mini` (or another supported model)
+2. Run dashboard:
+   - `python -m altinet.main dashboard --host 127.0.0.1 --port 8000`
+3. Open `http://127.0.0.1:8000` and use the AHLAN Assistant card.
+4. Test assistant chat API:
+   - `pytest tests/test_users_and_assistant.py tests/test_display_dashboard.py`
+
+Privacy note: user profile context is sent to OpenAI only when OpenAI-powered AHLAN chat is enabled with `OPENAI_API_KEY`. Without a key, chat uses local fallback responses.
+
 ## Running tests
 
 From project root (with `.venv` active):
