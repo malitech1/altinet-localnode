@@ -661,3 +661,12 @@ Set environment variables:
 In the dashboard, use the **Home Location** card to enter your address and click **Save Address**. Then click **Verify with Google** to geocode and verify. Verified location stores formatted address, latitude/longitude, place ID, and verification metadata.
 
 Weather card calls `/api/weather/current` and uses Open-Meteo with the saved verified latitude/longitude. If no verified location exists, weather is unavailable until address verification is completed.
+
+Manual test:
+1. Open dashboard (`http://127.0.0.1:8000/`).
+2. Enter home address fields in **Home Location**.
+3. Click **Save Address**.
+4. Click **Verify with Google**.
+5. Confirm **Address verified** state appears with formatted address and latitude/longitude.
+6. Confirm **Weather** card populates automatically (without page refresh).
+7. Refresh the page and confirm weather still loads from the saved verified location.

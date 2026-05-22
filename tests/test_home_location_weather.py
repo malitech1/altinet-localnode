@@ -30,6 +30,14 @@ def test_verify_location_with_mocked_google(monkeypatch, tmp_path):
     r = client.post('/api/home/location/verify')
     assert r.status_code == 200
     assert r.json()['success'] is True
+    assert r.json()['address_verified'] is True
+    assert r.json()['formatted_address'] == '1 Main St, Austin TX'
+    assert r.json()['latitude'] == 30.0
+    assert r.json()['longitude'] == -97.0
+    saved = load_home_model(path)
+    assert saved.location.address_verified is True
+    assert saved.location.latitude == 30.0
+    assert saved.location.longitude == -97.0
 
 
 def test_missing_google_key_returns_clean_error(monkeypatch):
@@ -65,3 +73,10 @@ def test_dashboard_contains_home_location_and_weather_cards():
     body = client.get('/').text
     assert 'Home Location' in body
     assert 'Weather' in body
+
+
+def test_dashboard_js_calls_load_weather_after_address_verification():
+    js = open('src/altinet/display/static/dashboard.js', encoding='utf-8').read()
+    assert 'Verifying address...' in js
+    assert 'await loadHomeLocation();' in js
+    assert 'await loadWeather();' in js
