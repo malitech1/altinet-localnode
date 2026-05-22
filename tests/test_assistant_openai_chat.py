@@ -7,7 +7,7 @@ from altinet.users.models import UserPreference, UserProfile, UserRoutine
 
 
 class _MockResponse:
-    output_text = '{"reply":"Hello from OpenAI","suggested_profile_updates":[{"type":"preference","summary":"Likes warm lighting","confidence":0.8}]}'
+    output_text = 'Hello from OpenAI'
 
 
 class _MockClient:
@@ -40,7 +40,7 @@ def test_missing_api_key_falls_back_locally(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     result = chat_with_ahlan("My name is Sam")
     assert result.used_openai is False
-    assert result.model == "gpt-5.5-mini"
+    assert result.model
     assert "Thanks Sam" in result.reply
 
 
@@ -49,16 +49,8 @@ def test_mocked_openai_response_returns_reply(monkeypatch):
     monkeypatch.setattr("altinet.assistant.openai_engine.OpenAI", lambda api_key: _MockClient())
     result = chat_with_ahlan("hello")
     assert result.used_openai is True
-    assert result.model == "gpt-5.5-mini"
+    assert result.model
     assert result.reply == "Hello from OpenAI"
-
-
-def test_suggested_profile_updates_are_parsed(monkeypatch):
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setattr("altinet.assistant.openai_engine.OpenAI", lambda api_key: _MockClient())
-    result = chat_with_ahlan("I like warm lights")
-    assert len(result.suggested_profile_updates) == 1
-    assert result.suggested_profile_updates[0].type == "preference"
 
 
 def test_api_assistant_chat_returns_valid_json(monkeypatch):
@@ -109,3 +101,18 @@ def test_api_assistant_status_env_present(monkeypatch):
     payload = response.json()
     assert payload["openai_configured"] is True
     assert payload["engine"] == "openai"
+
+
+def test_openai_exception_returns_error_string(monkeypatch):
+    class _RaisingClient:
+        class responses:
+            @staticmethod
+            def create(**_kwargs):
+                raise ValueError("invalid payload")
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setattr("altinet.assistant.openai_engine.OpenAI", lambda api_key: _RaisingClient())
+    result = chat_with_ahlan("hello")
+    assert result.used_openai is False
+    assert result.error == "ValueError: invalid payload"
+

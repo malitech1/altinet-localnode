@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -14,6 +14,8 @@ from altinet.users.models import UserProfile
 from altinet.users.storage import load_user_profiles
 
 load_dotenv()
+logger = logging.getLogger(__name__)
+DEFAULT_AHLAN_MODEL = os.getenv("OPENAI_TEXT_MODEL", "gpt-4.1-mini")
 
 
 class SuggestedProfileUpdate(BaseModel):
@@ -47,39 +49,68 @@ def _home_summary() -> dict:
     }
 
 
+def _resolve_model() -> str:
+    model = (os.getenv("AHLAN_MODEL") or "").strip()
+    return model or DEFAULT_AHLAN_MODEL
+
+
+def _extract_output_text(response: object) -> str:
+    output_text = getattr(response, "output_text", None)
+    if isinstance(output_text, str) and output_text.strip():
+        return output_text.strip()
+
+    output = getattr(response, "output", None)
+    if isinstance(output, list):
+        chunks: list[str] = []
+        for item in output:
+            if not isinstance(item, dict):
+                continue
+            for content in item.get("content", []):
+                if isinstance(content, dict) and content.get("type") in {"output_text", "text"}:
+                    text = content.get("text")
+                    if isinstance(text, str) and text.strip():
+                        chunks.append(text.strip())
+        if chunks:
+            return "\n".join(chunks)
+
+    return "I can help with that."
+
+
 def chat_with_ahlan(message: str, user_id: str | None = None, recent_messages: list[dict] | None = None) -> AhlanChatResult:
     api_key = os.getenv("OPENAI_API_KEY")
-    model = os.getenv("AHLAN_MODEL", "gpt-5.5-mini")
+    model = _resolve_model()
     if not api_key:
         fallback = generate_local_response(message)
         return AhlanChatResult(reply=fallback.message.content, used_openai=False, model=model)
 
     try:
         profile = _resolve_user(user_id)
-        prompt = build_ahlan_prompt(profile, _home_summary(), recent_messages)
+        system_prompt = build_ahlan_prompt(profile, _home_summary(), recent_messages)
         client = OpenAI(api_key=api_key)
         response = client.responses.create(
             model=model,
             input=[
-                {"role": "system", "content": prompt},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message},
             ],
         )
-        payload = json.loads(response.output_text)
-        parsed = AhlanChatResult(
-            reply=payload.get("reply", "I can help with that."),
-            suggested_profile_updates=payload.get("suggested_profile_updates", []),
+
+        return AhlanChatResult(
+            reply=_extract_output_text(response),
+            suggested_profile_updates=[],
             used_openai=True,
             model=model,
             error=None,
         )
-        return parsed
     except Exception as exc:
+        logger.exception("AHLAN OpenAI request failed")
         fallback = generate_local_response(message)
+        short_message = str(exc).splitlines()[0]
+        error_label = f"{exc.__class__.__name__}: {short_message}"
         return AhlanChatResult(
-            reply="I hit a temporary AI connection issue, but I can still help with a local response for now.",
+            reply=fallback.message.content,
             suggested_profile_updates=[],
             used_openai=False,
             model=model,
-            error=f"OpenAI error: {exc.__class__.__name__}",
+            error=error_label,
         )
