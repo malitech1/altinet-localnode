@@ -235,6 +235,42 @@ function renderFloorplan(data) {
   floorEl.innerHTML = html;
 }
 
+
+async function loadWeather() {
+  const placeholderEl = getEl('weather-placeholder');
+  const detailsEl = getEl('weather-details');
+  if (!placeholderEl || !detailsEl) return;
+
+  placeholderEl.textContent = 'Loading weather...';
+  detailsEl.innerHTML = '';
+
+  try {
+    const response = await fetch('/api/weather/current');
+    if (!response.ok) throw new Error(`Weather API failed (${response.status})`);
+
+    const payload = await response.json();
+    if (!payload?.available) {
+      placeholderEl.textContent = payload?.message || 'Set and verify home address to enable weather.';
+      return;
+    }
+
+    const temp = payload.temperature;
+    const description = payload.weather_description || 'Current conditions unavailable';
+    const location = payload.location_name || 'Unknown location';
+
+    placeholderEl.textContent = `${location} · ${temp ?? '--'}°C · ${description}`;
+    detailsEl.innerHTML = [
+      `<p>Feels like: ${payload.apparent_temperature ?? '--'}°C</p>`,
+      `<p>Humidity: ${payload.humidity ?? '--'}%</p>`,
+      `<p>Precipitation: ${payload.precipitation ?? '--'} mm</p>`,
+      `<p>Wind: ${payload.wind_speed ?? '--'} km/h</p>`,
+    ].join('');
+  } catch (error) {
+    console.error('Failed to load weather', error);
+    placeholderEl.textContent = 'Unable to fetch weather right now.';
+  }
+}
+
 function renderBottomCards(data) {
   const el = document.getElementById('bottom-cards');
   if (!el) return;
