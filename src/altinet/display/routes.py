@@ -274,11 +274,24 @@ def _build_user_profile(payload: UserCreateRequest) -> UserProfile:
 class AssistantChatRequest(BaseModel):
     message: str = Field(min_length=1)
     user_id: str | None = None
+    recent_messages: list[dict] = Field(default_factory=list)
+
+
+@router.get("/api/assistant/status")
+def assistant_status() -> dict:
+    api_key_configured = bool(os.getenv("OPENAI_API_KEY", "").strip())
+    model = os.getenv("AHLAN_MODEL", "gpt-5.5-mini")
+    return {
+        "openai_configured": api_key_configured,
+        "model": model,
+        "engine": "openai" if api_key_configured else "local_fallback",
+        "reason": None if api_key_configured else "OPENAI_API_KEY missing",
+    }
 
 
 @router.post("/api/assistant/chat")
 def assistant_chat(payload: AssistantChatRequest) -> dict:
-    result = chat_with_ahlan(payload.message, user_id=payload.user_id, recent_messages=[])
+    result = chat_with_ahlan(payload.message, user_id=payload.user_id, recent_messages=payload.recent_messages)
     return result.model_dump()
 
 

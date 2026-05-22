@@ -109,6 +109,7 @@ def test_dashboard_contains_required_element_ids():
         "user-contextual-information",
         "save-user-button",
         "cancel-user-button",
+        "assistant-mode",
     ]:
         assert f'id="{element_id}"' in response.text
 
@@ -147,3 +148,9 @@ def test_dashboard_js_contains_startup_guardrails():
     assert "Altinet dashboard.js loaded" in js
     assert "add-user-button" in js
     assert "seed-demo-users-button" in js
+
+
+def test_dashboard_js_updates_assistant_status_from_api():
+    js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
+    assert "/api/assistant/status" in js
+    assert "updateAssistantStatus" in js

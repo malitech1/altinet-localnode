@@ -129,7 +129,19 @@ function renderAssistantMessages() {
 function appendAssistantMessage(role, content) {
   if (!window.__ahlanMessages) window.__ahlanMessages = [];
   window.__ahlanMessages.push({ role, content });
+  if (window.__ahlanMessages.length > 12) {
+    window.__ahlanMessages = window.__ahlanMessages.slice(-12);
+  }
   renderAssistantMessages();
+}
+
+function updateAssistantStatus({ used_openai, model, error, configured }) {
+  const modeEl = getEl('assistant-mode');
+  if (!modeEl) return;
+  const label = used_openai === true || configured === true ? 'OpenAI connected' : 'Local fallback';
+  const modelText = model ? ` • ${model}` : '';
+  const errorText = error ? ` • ${error}` : '';
+  modeEl.textContent = `${label}${modelText}${errorText}`;
 }
 
 async function loadUsers() {
@@ -208,9 +220,16 @@ async function sendAssistantMessage(text) {
   const response = await fetch('/api/assistant/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: text, user_id: selectedUserId() }),
+    body: JSON.stringify({ message: text, user_id: selectedUserId(), recent_messages: window.__ahlanMessages || [] }),
   });
   return response.json();
+}
+
+async function loadAssistantStatus() {
+  const response = await fetch('/api/assistant/status');
+  if (!response.ok) throw new Error(`Assistant status failed (${response.status})`);
+  const payload = await response.json();
+  updateAssistantStatus({ configured: payload.openai_configured, model: payload.model, error: payload.reason });
 }
 
 function roomForEntity(entity, index) {
@@ -328,6 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { refreshState(); } catch (error) { console.error('refreshState startup failed', error); }
   try { setInterval(refreshState, 2000); } catch (error) { console.error('refreshState interval failed', error); }
   try { loadUsers(); } catch (error) { console.error('loadUsers startup failed', error); }
+  try { loadAssistantStatus(); } catch (error) { console.error('loadAssistantStatus startup failed', error); }
 
   const assistantSend = getEl('assistant-send');
   assistantSend?.addEventListener('click', async () => {
@@ -339,13 +359,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const payload = await sendAssistantMessage(text.trim());
       appendAssistantMessage('assistant', payload.reply || "I'm here to help.");
-      const modeEl = getEl('assistant-mode');
-      if (modeEl) modeEl.textContent = payload.used_openai ? 'using OpenAI' : 'local fallback';
+      updateAssistantStatus({ used_openai: payload.used_openai, model: payload.model, error: payload.error });
       renderSuggestedUpdates(payload.suggested_profile_updates || []);
     } catch (_error) {
       appendAssistantMessage('assistant', 'I hit a temporary issue. Using local fallback response.');
-      const modeEl = getEl('assistant-mode');
-      if (modeEl) modeEl.textContent = 'local fallback';
+      updateAssistantStatus({ used_openai: false, model: null, error: 'Request failed' });
     }
   });
 
@@ -370,4 +388,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   try { loadWeather(); } catch (error) { console.error('loadWeather startup failed', error); }
 });
-

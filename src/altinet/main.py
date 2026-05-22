@@ -7,6 +7,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from altinet.context.contextualiser import build_context_block
 from altinet.context.schemas import HouseState, PossibleAction
 from altinet.decision.mock_engine import decide_action
@@ -38,6 +40,8 @@ DEFAULT_ACTIONS = [
     PossibleAction.TURN_LIGHT_OFF,
     PossibleAction.DO_NOTHING,
 ]
+
+load_dotenv()
 
 
 def main(argv: list[str] | None = None) -> None:

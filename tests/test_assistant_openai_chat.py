@@ -40,6 +40,7 @@ def test_missing_api_key_falls_back_locally(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     result = chat_with_ahlan("My name is Sam")
     assert result.used_openai is False
+    assert result.model == "gpt-5.5-mini"
     assert "Thanks Sam" in result.reply
 
 
@@ -48,6 +49,7 @@ def test_mocked_openai_response_returns_reply(monkeypatch):
     monkeypatch.setattr("altinet.assistant.openai_engine.OpenAI", lambda api_key: _MockClient())
     result = chat_with_ahlan("hello")
     assert result.used_openai is True
+    assert result.model == "gpt-5.5-mini"
     assert result.reply == "Hello from OpenAI"
 
 
@@ -63,7 +65,7 @@ def test_api_assistant_chat_returns_valid_json(monkeypatch):
     monkeypatch.setattr(
         "altinet.display.routes.chat_with_ahlan",
         lambda message, user_id, recent_messages: type(
-            "Result", (), {"model_dump": lambda self: {"reply": "ok", "suggested_profile_updates": [], "used_openai": False, "error": None}}
+            "Result", (), {"model_dump": lambda self: {"reply": "ok", "suggested_profile_updates": [], "used_openai": False, "model": "gpt-5.5-mini", "error": None}}
         )(),
     )
     client = TestClient(create_app())
@@ -73,6 +75,7 @@ def test_api_assistant_chat_returns_valid_json(monkeypatch):
     assert payload["reply"] == "ok"
     assert isinstance(payload["suggested_profile_updates"], list)
     assert isinstance(payload["used_openai"], bool)
+    assert "model" in payload
     assert "error" in payload
 
 
@@ -85,3 +88,24 @@ def test_api_assistant_chat_works_without_openai_api_key(monkeypatch):
     assert payload["used_openai"] is False
     assert isinstance(payload["reply"], str)
     assert payload["reply"]
+
+
+def test_api_assistant_status_env_missing(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    client = TestClient(create_app())
+    response = client.get("/api/assistant/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["openai_configured"] is False
+    assert payload["engine"] == "local_fallback"
+
+
+def test_api_assistant_status_env_present(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("AHLAN_MODEL", "gpt-5.5-mini")
+    client = TestClient(create_app())
+    response = client.get("/api/assistant/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["openai_configured"] is True
+    assert payload["engine"] == "openai"
