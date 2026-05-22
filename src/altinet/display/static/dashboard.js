@@ -120,7 +120,7 @@ function extractResidents(data) {
 }
 
 function renderAssistantMessages() {
-  const chat = document.getElementById('assistant-chat');
+  const chat = document.getElementById('ahlan-chat-history');
   if (!chat) return;
   const messages = window.__ahlanMessages || [];
   chat.innerHTML = messages.map((m) => `<div class="chat-message ${m.role}"><strong>${m.role === 'assistant' ? 'AHLAN' : 'You'}:</strong> ${m.content}</div>`).join('');
@@ -136,7 +136,7 @@ function appendAssistantMessage(role, content) {
 }
 
 function updateAssistantStatus({ used_openai, model, error, configured }) {
-  const modeEl = getEl('assistant-mode');
+  const modeEl = getEl('ahlan-status');
   if (!modeEl) return;
   const label = used_openai === true || configured === true ? 'OpenAI connected' : 'Local fallback';
   const modelText = model ? ` • ${model}` : '';
@@ -223,6 +223,26 @@ async function sendAssistantMessage(text) {
     body: JSON.stringify({ message: text, user_id: selectedUserId(), recent_messages: window.__ahlanMessages || [] }),
   });
   return response.json();
+}
+
+
+async function sendAhlanMessage() {
+  const input = getEl('ahlan-message-input');
+  const text = input?.value || '';
+  if (!text.trim()) return;
+
+  appendAssistantMessage('user', text.trim());
+  input.value = '';
+
+  try {
+    const payload = await sendAssistantMessage(text.trim());
+    appendAssistantMessage('assistant', payload.reply || "I'm here to help.");
+    updateAssistantStatus({ used_openai: payload.used_openai, model: payload.model, error: payload.error });
+    renderSuggestedUpdates(payload.suggested_profile_updates || []);
+  } catch (_error) {
+    appendAssistantMessage('assistant', 'I hit a temporary issue. Using local fallback response.');
+    updateAssistantStatus({ used_openai: false, model: null, error: 'Request failed' });
+  }
 }
 
 async function loadAssistantStatus() {
@@ -349,23 +369,26 @@ document.addEventListener('DOMContentLoaded', () => {
   try { loadUsers(); } catch (error) { console.error('loadUsers startup failed', error); }
   try { loadAssistantStatus(); } catch (error) { console.error('loadAssistantStatus startup failed', error); }
 
-  const assistantSend = getEl('assistant-send');
-  assistantSend?.addEventListener('click', async () => {
-    const input = getEl('assistant-input');
-    const text = input?.value || '';
-    if (!text.trim()) return;
-    appendAssistantMessage('user', text.trim());
-    input.value = '';
-    try {
-      const payload = await sendAssistantMessage(text.trim());
-      appendAssistantMessage('assistant', payload.reply || "I'm here to help.");
-      updateAssistantStatus({ used_openai: payload.used_openai, model: payload.model, error: payload.error });
-      renderSuggestedUpdates(payload.suggested_profile_updates || []);
-    } catch (_error) {
-      appendAssistantMessage('assistant', 'I hit a temporary issue. Using local fallback response.');
-      updateAssistantStatus({ used_openai: false, model: null, error: 'Request failed' });
-    }
-  });
+  const ahlanMessageInput = getEl('ahlan-message-input');
+  const ahlanSendButton = getEl('ahlan-send-button');
+  const ahlanChatHistory = getEl('ahlan-chat-history');
+
+  console.log('[AHLAN] ahlan-message-input present:', Boolean(ahlanMessageInput));
+  console.log('[AHLAN] ahlan-send-button present:', Boolean(ahlanSendButton));
+  console.log('[AHLAN] ahlan-chat-history present:', Boolean(ahlanChatHistory));
+
+  const ahlanWired = Boolean(ahlanMessageInput && ahlanSendButton && ahlanChatHistory);
+  if (!ahlanWired) {
+    console.warn('[AHLAN] Not fully wired: missing required chat element(s).');
+  } else {
+    ahlanSendButton.addEventListener('click', sendAhlanMessage);
+    ahlanMessageInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendAhlanMessage();
+      }
+    });
+  }
 
   const requiredElements = [
     'dashboard-status', 'users-list', 'add-user-button', 'add-user-form', 'user-display-name',
@@ -382,9 +405,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   getEl('add-user-form')?.addEventListener('submit', saveUser);
   getEl('seed-demo-users-button')?.addEventListener('click', seedDemoUsers);
-  getEl('ahlan-send-button')?.addEventListener('click', () => {
-    getEl('assistant-send')?.click();
-  });
 
   try { loadWeather(); } catch (error) { console.error('loadWeather startup failed', error); }
 });

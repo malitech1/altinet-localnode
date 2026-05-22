@@ -206,6 +206,18 @@ Privacy note: user profile context is sent to OpenAI only when OpenAI-powered AH
 6. Open dashboard and send a message in the AHLAN card.
 7. Confirm the card shows **OpenAI connected** and displays the model name.
 
+
+### AHLAN dashboard troubleshooting
+
+- If browser console logs `Missing dashboard element: ahlan-send-button`, confirm these IDs in `src/altinet/display/templates/dashboard.html` exactly match the dashboard JS wiring:
+  - `ahlan-chat-history`
+  - `ahlan-message-input`
+  - `ahlan-send-button`
+  - `ahlan-status`
+- If AHLAN shows `BadRequestError`, validate the OpenAI request payload format in `src/altinet/assistant/openai_engine.py` and verify `AHLAN_MODEL` is a currently available model for your account.
+- Check assistant readiness before using the dashboard chat:
+  - `http://127.0.0.1:8000/api/assistant/status`
+
 ## Running tests
 
 From project root (with `.venv` active):

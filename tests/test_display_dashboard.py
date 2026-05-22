@@ -109,7 +109,10 @@ def test_dashboard_contains_required_element_ids():
         "user-contextual-information",
         "save-user-button",
         "cancel-user-button",
-        "assistant-mode",
+        "ahlan-status",
+        "ahlan-chat-history",
+        "ahlan-message-input",
+        "ahlan-send-button",
     ]:
         assert f'id="{element_id}"' in response.text
 
@@ -154,3 +157,13 @@ def test_dashboard_js_updates_assistant_status_from_api():
     js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
     assert "/api/assistant/status" in js
     assert "updateAssistantStatus" in js
+
+
+def test_dashboard_html_contains_ahlan_send_button_id():
+    template = Path("src/altinet/display/templates/dashboard.html").read_text(encoding="utf-8")
+    assert "id=\"ahlan-send-button\"" in template
+
+
+def test_dashboard_js_references_ahlan_send_button_id():
+    js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
+    assert "ahlan-send-button" in js
