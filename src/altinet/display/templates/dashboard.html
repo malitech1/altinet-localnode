@@ -40,7 +40,27 @@
 
         <section class="panel weather-card">
           <h3>Weather</h3>
-          <p id="weather-placeholder">72°F · Clear skies (placeholder)</p>
+          <p id="weather-placeholder">Set and verify home address to enable weather.</p>
+          <div id="weather-details"></div>
+        </section>
+
+        <section class="panel">
+          <h3>Home Location</h3>
+          <form id="home-location-form">
+            <label>Address Line 1 <input id="address-line-1" name="address_line_1" /></label>
+            <label>Address Line 2 <input id="address-line-2" name="address_line_2" /></label>
+            <label>Suburb/City <input id="suburb-city" name="suburb_city" /></label>
+            <label>State/Region <input id="state-region" name="state_region" /></label>
+            <label>Postcode <input id="postcode" name="postcode" /></label>
+            <label>Country <input id="country" name="country" /></label>
+            <div class="dialog-actions">
+              <button id="save-address-button" type="submit">Save Address</button>
+              <button id="verify-address-button" type="button">Verify with Google</button>
+            </div>
+          </form>
+          <p id="location-status"></p>
+          <p id="formatted-address"></p>
+          <p id="lat-lon"></p>
         </section>
 
         <section class="panel floorplan-panel" id="floorplan">

@@ -28,6 +28,7 @@ def create_blank_home_model() -> HomeModel:
         perception_pods=[],
         device_placements=[],
         units="metres",
+        location={},
     )
 
 
@@ -66,4 +67,5 @@ def create_default_home_model() -> HomeModel:
         ],
         device_placements=[DevicePlacement(id="placement-light-demo-1", device_id=light.id, room_id=room.id, x=light.x, y=light.y)],
         units="metres",
+        location={},
     )

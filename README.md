@@ -649,3 +649,15 @@ Planned next steps include OpenAI-powered conversation, preference extraction, a
 5. Open `http://127.0.0.1:8000/api/users` again and confirm demo users (including `Elliot`) are present.
 6. Confirm the **Residents / Users** card updates immediately and does not show "No users added yet" when users exist.
 7. User profiles are stored in `data/altinet/users/users.json`.
+
+
+## Home location verification and weather
+
+Set environment variables:
+
+- `GOOGLE_MAPS_API_KEY=...`
+- `WEATHER_PROVIDER=open_meteo`
+
+In the dashboard, use the **Home Location** card to enter your address and click **Save Address**. Then click **Verify with Google** to geocode and verify. Verified location stores formatted address, latitude/longitude, place ID, and verification metadata.
+
+Weather card calls `/api/weather/current` and uses Open-Meteo with the saved verified latitude/longitude. If no verified location exists, weather is unavailable until address verification is completed.

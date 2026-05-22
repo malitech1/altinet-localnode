@@ -332,3 +332,55 @@ document.addEventListener('DOMContentLoaded', () => {
     getEl('assistant-send')?.click();
   });
 });
+
+async function loadHomeLocation() {
+  const res = await fetch('/api/home/location');
+  const loc = await res.json();
+  const fields = ['address_line_1','address_line_2','suburb_city','state_region','postcode','country'];
+  fields.forEach((f)=>{ const el=document.querySelector(`[name="${f}"]`); if(el) el.value = loc[f] || '';});
+  const status = document.getElementById('location-status');
+  const formatted = document.getElementById('formatted-address');
+  const latlon = document.getElementById('lat-lon');
+  if (status) status.textContent = `Verification: ${loc.address_verified ? 'Verified' : 'Not verified'}`;
+  if (formatted) formatted.textContent = loc.formatted_address ? `Formatted: ${loc.formatted_address}` : '';
+  if (latlon) latlon.textContent = (loc.latitude !== null && loc.longitude !== null) ? `Lat/Lon: ${loc.latitude}, ${loc.longitude}` : '';
+}
+
+async function saveHomeLocation(event) {
+  event.preventDefault();
+  const form = event.target;
+  const payload = Object.fromEntries(new FormData(form).entries());
+  const res = await fetch('/api/home/location', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  if (!res.ok) { setDashboardStatus('Failed to save home location'); return; }
+  setDashboardStatus('Home location saved');
+  await loadHomeLocation();
+}
+
+async function verifyHomeLocation() {
+  const res = await fetch('/api/home/location/verify', {method:'POST'});
+  const payload = await res.json();
+  setDashboardStatus(payload.message || 'Verification complete');
+  await loadHomeLocation();
+  await loadWeather();
+}
+
+async function loadWeather() {
+  const res = await fetch('/api/weather/current');
+  const payload = await res.json();
+  const placeholder = document.getElementById('weather-placeholder');
+  const details = document.getElementById('weather-details');
+  if (!payload.available) {
+    if (placeholder) placeholder.textContent = 'Set and verify home address to enable weather.';
+    if (details) details.innerHTML = '';
+    return;
+  }
+  if (placeholder) placeholder.textContent = `${payload.temperature}°C · ${payload.weather_description}`;
+  if (details) details.innerHTML = `Feels like: ${payload.apparent_temperature}°C<br/>Humidity: ${payload.humidity}%<br/>Rain/Precipitation: ${payload.precipitation}<br/>Wind: ${payload.wind_speed}<br/>Condition: ${payload.weather_code}<br/>Last updated: ${payload.fetched_at}`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('home-location-form')?.addEventListener('submit', saveHomeLocation);
+  document.getElementById('verify-address-button')?.addEventListener('click', verifyHomeLocation);
+  loadHomeLocation().catch(console.error);
+  loadWeather().catch(console.error);
+});
