@@ -7,7 +7,7 @@ from altinet.domain.context import UserContext, UserPreference, UserRoutine
 from altinet.domain.users import UserProfile
 from altinet.store.json_store import JsonStore
 
-DATA_FILE = Path("data/altinet/users/users.json")
+DATA_FILE = Path(__file__).resolve().parents[4] / "data" / "altinet" / "users" / "users.json"
 
 
 class UsersRepository:
