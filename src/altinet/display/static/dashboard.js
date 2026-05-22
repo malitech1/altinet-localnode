@@ -369,9 +369,7 @@ async function verifyHomeLocation() {
     }
     setDashboardStatus(payload.message || 'Address verified');
     await loadHomeLocation();
-    if (payload.latitude !== null && payload.latitude !== undefined && payload.longitude !== null && payload.longitude !== undefined) {
-      await loadWeather();
-    }
+    await loadWeather();
   } catch (error) {
     console.error('Address verification failed', error);
     setDashboardStatus(`Unable to verify address: ${error.message}`);
@@ -397,7 +395,8 @@ function renderWeather(weather, requestOk = true) {
   const placeholder = document.getElementById('weather-placeholder');
   const details = document.getElementById('weather-details');
   if (!requestOk || !weather?.available) {
-    const message = weather?.message || 'Set and verify home address to enable weather.';
+    const reason = weather?.reason ? ` (${weather.reason})` : '';
+    const message = (weather?.message || 'Set and verify home address to enable weather.') + reason;
     if (placeholder) placeholder.textContent = message;
     if (details) details.innerHTML = '';
     return;

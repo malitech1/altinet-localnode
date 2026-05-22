@@ -19,6 +19,20 @@ def load_home_model(path: Path = HOME_MODEL_PATH) -> HomeModel:
         save_home_model(model, path)
         return model
     payload = json.loads(path.read_text(encoding="utf-8"))
+    location = payload.get("location")
+    if isinstance(location, dict):
+        if location.get("latitude") is None and location.get("lat") is not None:
+            location["latitude"] = location.get("lat")
+        if location.get("longitude") is None:
+            if location.get("lon") is not None:
+                location["longitude"] = location.get("lon")
+            elif location.get("lng") is not None:
+                location["longitude"] = location.get("lng")
+        if "address_verified" not in location:
+            for key in ("verified", "is_verified"):
+                if key in location:
+                    location["address_verified"] = bool(location.get(key))
+                    break
     return HomeModel.model_validate(payload)
 
 

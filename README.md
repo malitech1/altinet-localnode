@@ -670,3 +670,14 @@ Manual test:
 5. Confirm **Address verified** state appears with formatted address and latitude/longitude.
 6. Confirm **Weather** card populates automatically (without page refresh).
 7. Refresh the page and confirm weather still loads from the saved verified location.
+
+Debug API checks:
+1. Open `http://127.0.0.1:8000/api/home/location` and confirm:
+   - `address_verified: true`
+   - `latitude` and `longitude` are present.
+2. Open `http://127.0.0.1:8000/api/weather/current` and confirm `available: true`.
+3. If weather is unavailable (`available: false`), inspect `reason`:
+   - `missing_lat_lon`
+   - `address_not_verified`
+   - `no_home_location_file`
+   - `weather_fetch_failed`

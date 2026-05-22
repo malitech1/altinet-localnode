@@ -55,6 +55,7 @@ def test_weather_unavailable_without_location(monkeypatch, tmp_path):
     client = TestClient(create_app())
     r = client.get('/api/weather/current')
     assert r.json()['available'] is False
+    assert r.json()['reason'] == 'address_not_verified'
 
 
 def test_weather_with_mocked_open_meteo(monkeypatch, tmp_path):
@@ -62,10 +63,38 @@ def test_weather_with_mocked_open_meteo(monkeypatch, tmp_path):
     m = create_blank_home_model(); m.location.address_verified=True; m.location.latitude=30.0; m.location.longitude=-97.0
     save_home_model(m, path)
     monkeypatch.setattr('altinet.display.routes.load_home_model', lambda: load_home_model(path))
-    monkeypatch.setattr('altinet.display.routes.fetch_open_meteo_current_weather', lambda lat, lon: {"available": True, "temperature": 21, "apparent_temperature": 22, "humidity": 50, "precipitation": 0.2, "wind_speed": 5, "weather_code": 1, "weather_description":"Mainly clear", "fetched_at":"now"})
+    called = {}
+    def _mock_fetch(lat, lon):
+        called['lat'] = lat
+        called['lon'] = lon
+        return {"available": True, "temperature": 21, "apparent_temperature": 22, "humidity": 50, "precipitation": 0.2, "wind_speed": 5, "weather_code": 1, "weather_description":"Mainly clear", "fetched_at":"now"}
+    monkeypatch.setattr('altinet.display.routes.fetch_open_meteo_current_weather', _mock_fetch)
     client = TestClient(create_app())
     r = client.get('/api/weather/current')
     assert r.json()['available'] is True
+    assert called == {"lat": 30.0, "lon": -97.0}
+
+
+def test_weather_reason_missing_lat_lon(monkeypatch, tmp_path):
+    path = tmp_path / 'home.json'
+    m = create_blank_home_model(); m.location.address_verified=True
+    save_home_model(m, path)
+    monkeypatch.setattr('altinet.display.routes.load_home_model', lambda: load_home_model(path))
+    client = TestClient(create_app())
+    r = client.get('/api/weather/current')
+    assert r.json()['available'] is False
+    assert r.json()['reason'] == 'missing_lat_lon'
+
+
+def test_weather_reason_address_not_verified(monkeypatch, tmp_path):
+    path = tmp_path / 'home.json'
+    m = create_blank_home_model(); m.location.address_verified=False; m.location.latitude=30.0; m.location.longitude=-97.0
+    save_home_model(m, path)
+    monkeypatch.setattr('altinet.display.routes.load_home_model', lambda: load_home_model(path))
+    client = TestClient(create_app())
+    r = client.get('/api/weather/current')
+    assert r.json()['available'] is False
+    assert r.json()['reason'] == 'address_not_verified'
 
 
 def test_dashboard_contains_home_location_and_weather_cards():
@@ -80,3 +109,14 @@ def test_dashboard_js_calls_load_weather_after_address_verification():
     assert 'Verifying address...' in js
     assert 'await loadHomeLocation();' in js
     assert 'await loadWeather();' in js
+
+
+def test_load_home_model_normalizes_legacy_location_fields(tmp_path):
+    path = tmp_path / 'home.json'
+    payload = create_blank_home_model().model_dump()
+    payload["location"] = {"lat": -27.6113215, "lng": 153.3701154, "verified": True}
+    path.write_text(json.dumps(payload), encoding='utf-8')
+    model = load_home_model(path)
+    assert model.location.address_verified is True
+    assert model.location.latitude == -27.6113215
+    assert model.location.longitude == 153.3701154
