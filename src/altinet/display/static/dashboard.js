@@ -238,6 +238,7 @@ const cancelUserButton = document.getElementById('cancel-user-button');
 addUserButton?.addEventListener('click', () => {
   if (addUserForm) {
     addUserForm.hidden = false;
+    document.getElementById('user-display-name')?.focus();
     setDashboardStatus('Add User form shown');
   }
 });
