@@ -13,12 +13,14 @@ from starlette.requests import Request
 
 from altinet.display.state_adapter import build_dashboard_state
 from altinet.assistant.openai_engine import chat_with_ahlan
-from altinet.home.models import HomeModel
+from altinet.home.models import HomeModel, HomeLocation
 from altinet.home.storage import load_home_model, reset_to_blank_model, reset_to_demo_model, save_home_model
 from altinet.domain.users import UserProfile
 from altinet.domain.access import AccessLevel
 from altinet.domain.context import UserPreference, UserRoutine, UserContext
 from altinet.store.registry import RegistryService
+from altinet.services.geocoding import validate_or_geocode_home_address
+from altinet.services.weather import fetch_open_meteo_current_weather
 from altinet.store.repositories.users_repository import (
     add_context_note,
     add_preference,
@@ -101,6 +103,42 @@ def reset_demo() -> dict:
 def new_blank_home() -> dict:
     return reset_to_blank_model().model_dump()
 
+
+
+
+@router.get("/api/home/location")
+def get_home_location() -> dict:
+    return load_home_model().location.model_dump()
+
+
+@router.post("/api/home/location")
+def save_home_location(payload: HomeLocation) -> dict:
+    model = load_home_model()
+    model.location = payload
+    return save_home_model(model).location.model_dump()
+
+
+@router.post("/api/home/location/verify")
+def verify_home_location() -> dict:
+    model = load_home_model()
+    result = validate_or_geocode_home_address(model.location.model_dump())
+    if result.get("success"):
+        for key, value in result.items():
+            if hasattr(model.location, key):
+                setattr(model.location, key, value)
+        save_home_model(model)
+    return result
+
+
+@router.get("/api/weather/current")
+def get_current_weather() -> dict:
+    model = load_home_model()
+    if not model.location.address_verified or model.location.latitude is None or model.location.longitude is None:
+        return {"available": False, "message": "Set and verify home address first."}
+    try:
+        return fetch_open_meteo_current_weather(model.location.latitude, model.location.longitude)
+    except Exception as exc:  # noqa: BLE001
+        return {"available": False, "message": f"Unable to fetch weather right now: {exc}"}
 
 @router.get("/api/registry")
 def get_registry() -> dict:

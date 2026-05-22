@@ -113,9 +113,27 @@ class PerceptionPodPlacement(BaseModel):
     sensors: list[str] = Field(default_factory=list)
 
 
+
+
+class HomeLocation(BaseModel):
+    address_line_1: str | None = None
+    address_line_2: str | None = None
+    suburb_city: str | None = None
+    state_region: str | None = None
+    postcode: str | None = None
+    country: str | None = None
+    formatted_address: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    google_place_id: str | None = None
+    address_verified: bool = False
+    address_verification_source: str | None = None
+    address_verified_at: str | None = None
+
 class HomeModel(BaseModel):
     property_name: str
     address: str | None = None
+    location: HomeLocation = Field(default_factory=HomeLocation)
     property_boundary: PropertyBoundary
     house_dimensions: HouseDimensions
     floors: list[Floor] = Field(default_factory=list)
