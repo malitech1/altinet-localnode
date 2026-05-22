@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -48,6 +49,11 @@ templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 @router.get("/")
 def dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="dashboard.html", context={})
+
+
+@router.get("/settings")
+def settings(request: Request):
+    return templates.TemplateResponse(request=request, name="settings.html", context={})
 
 
 @router.get("/api/state")
@@ -148,9 +154,41 @@ def get_current_weather() -> dict:
     if loc.latitude is None or loc.longitude is None:
         return {"available": False, "message": "Set and verify home address first.", "reason": "missing_lat_lon", "location_debug": debug}
     try:
-        return fetch_open_meteo_current_weather(loc.latitude, loc.longitude)
+        weather = fetch_open_meteo_current_weather(loc.latitude, loc.longitude)
+        location_name = loc.suburb_city or _location_from_formatted_address(loc.formatted_address) or "Unknown location"
+        return {
+            **weather,
+            "location_name": location_name,
+            "formatted_address": loc.formatted_address,
+            "latitude": loc.latitude,
+            "longitude": loc.longitude,
+        }
     except Exception as exc:  # noqa: BLE001
         return {"available": False, "message": f"Unable to fetch weather right now: {exc}", "reason": "weather_fetch_failed", "location_debug": debug}
+
+
+@router.get("/api/settings")
+def get_settings() -> dict:
+    return {
+        "openai": {"configured": bool(os.getenv("OPENAI_API_KEY", "").strip()), "model": os.getenv("AHLAN_MODEL", "gpt-5.5-mini")},
+        "google_maps": {"configured": bool(os.getenv("GOOGLE_MAPS_API_KEY", "").strip())},
+        "weather": {"provider": os.getenv("WEATHER_PROVIDER", "open_meteo")},
+        "perception": {
+            "default_camera_index": int(os.getenv("DEFAULT_CAMERA_INDEX", "0")),
+            "save_timestamped_captures": os.getenv("SAVE_TIMESTAMPED_CAPTURES", "true").lower() in {"1", "true", "yes", "on"},
+        },
+        "runtime": {"tick_rate_hz": float(os.getenv("RUNTIME_TICK_RATE_HZ", "1.0"))},
+        "data": {"data_dir": os.getenv("ALTINET_DATA_DIR", "data/altinet")},
+    }
+
+
+def _location_from_formatted_address(formatted_address: str | None) -> str | None:
+    if not formatted_address:
+        return None
+    parts = [p.strip() for p in formatted_address.split(",") if p.strip()]
+    if len(parts) >= 2:
+        return parts[1]
+    return parts[0] if parts else None
 
 @router.get("/api/registry")
 def get_registry() -> dict:

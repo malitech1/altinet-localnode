@@ -15,6 +15,8 @@ def fetch_open_meteo_current_weather(latitude: float, longitude: float) -> dict:
     current = payload.get("current", {})
     return {
         "available": True,
+        "latitude": latitude,
+        "longitude": longitude,
         "temperature": current.get("temperature_2m"),
         "apparent_temperature": current.get("apparent_temperature"),
         "humidity": current.get("relative_humidity_2m"),

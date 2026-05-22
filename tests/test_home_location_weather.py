@@ -60,7 +60,7 @@ def test_weather_unavailable_without_location(monkeypatch, tmp_path):
 
 def test_weather_with_mocked_open_meteo(monkeypatch, tmp_path):
     path = tmp_path / 'home.json'
-    m = create_blank_home_model(); m.location.address_verified=True; m.location.latitude=30.0; m.location.longitude=-97.0
+    m = create_blank_home_model(); m.location.address_verified=True; m.location.latitude=30.0; m.location.longitude=-97.0; m.location.suburb_city='Macleay Island'; m.location.formatted_address='Macleay Island QLD, Australia'
     save_home_model(m, path)
     monkeypatch.setattr('altinet.display.routes.load_home_model', lambda: load_home_model(path))
     called = {}
@@ -73,6 +73,7 @@ def test_weather_with_mocked_open_meteo(monkeypatch, tmp_path):
     r = client.get('/api/weather/current')
     assert r.json()['available'] is True
     assert called == {"lat": 30.0, "lon": -97.0}
+    assert r.json()['location_name'] == 'Macleay Island'
 
 
 def test_weather_reason_missing_lat_lon(monkeypatch, tmp_path):
@@ -97,18 +98,26 @@ def test_weather_reason_address_not_verified(monkeypatch, tmp_path):
     assert r.json()['reason'] == 'address_not_verified'
 
 
-def test_dashboard_contains_home_location_and_weather_cards():
+def test_dashboard_contains_weather_card_only_for_location():
     client = TestClient(create_app())
     body = client.get('/').text
-    assert 'Home Location' in body
     assert 'Weather' in body
+    assert 'home-location-form' not in body
 
 
-def test_dashboard_js_calls_load_weather_after_address_verification():
-    js = open('src/altinet/display/static/dashboard.js', encoding='utf-8').read()
-    assert 'Verifying address...' in js
-    assert 'await loadHomeLocation();' in js
-    assert 'await loadWeather();' in js
+def test_settings_js_calls_home_location_and_verify_endpoints():
+    js = open('src/altinet/display/static/settings.js', encoding='utf-8').read()
+    assert '/api/home/location' in js
+    assert '/api/home/location/verify' in js
+
+
+def test_api_settings_returns_namespaces(monkeypatch):
+    monkeypatch.setenv('AHLAN_MODEL', 'gpt-test')
+    monkeypatch.setenv('WEATHER_PROVIDER', 'open_meteo')
+    client = TestClient(create_app())
+    payload = client.get('/api/settings').json()
+    assert set(payload.keys()) == {'openai', 'google_maps', 'weather', 'perception', 'runtime', 'data'}
+    assert payload['openai']['model'] == 'gpt-test'
 
 
 def test_load_home_model_normalizes_legacy_location_fields(tmp_path):
