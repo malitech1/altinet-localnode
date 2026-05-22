@@ -193,6 +193,19 @@ The current dashboard floorplan is a **mock visual layer** rendered in CSS/JavaS
 
 Privacy note: user profile context is sent to OpenAI only when OpenAI-powered AHLAN chat is enabled with `OPENAI_API_KEY`. Without a key, chat uses local fallback responses.
 
+### Manual verification checklist (AHLAN OpenAI)
+
+1. Create `.env` in the repository root.
+2. Set:
+   - `OPENAI_API_KEY=...`
+   - `AHLAN_MODEL=gpt-5.5-mini` (or your preferred model)
+3. Restart the dashboard server:
+   - `python -m altinet.main dashboard --host 127.0.0.1 --port 8000`
+4. Open `http://127.0.0.1:8000/api/assistant/status`.
+5. Confirm `openai_configured` is `true`.
+6. Open dashboard and send a message in the AHLAN card.
+7. Confirm the card shows **OpenAI connected** and displays the model name.
+
 ## Running tests
 
 From project root (with `.venv` active):

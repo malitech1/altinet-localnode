@@ -26,6 +26,7 @@ class AhlanChatResult(BaseModel):
     reply: str
     suggested_profile_updates: list[SuggestedProfileUpdate] = Field(default_factory=list)
     used_openai: bool
+    model: str
     error: str | None = None
 
 
@@ -51,7 +52,7 @@ def chat_with_ahlan(message: str, user_id: str | None = None, recent_messages: l
     model = os.getenv("AHLAN_MODEL", "gpt-5.5-mini")
     if not api_key:
         fallback = generate_local_response(message)
-        return AhlanChatResult(reply=fallback.message.content, used_openai=False)
+        return AhlanChatResult(reply=fallback.message.content, used_openai=False, model=model)
 
     try:
         profile = _resolve_user(user_id)
@@ -69,14 +70,16 @@ def chat_with_ahlan(message: str, user_id: str | None = None, recent_messages: l
             reply=payload.get("reply", "I can help with that."),
             suggested_profile_updates=payload.get("suggested_profile_updates", []),
             used_openai=True,
+            model=model,
             error=None,
         )
         return parsed
     except Exception as exc:
         fallback = generate_local_response(message)
         return AhlanChatResult(
-            reply=fallback.message.content,
+            reply="I hit a temporary AI connection issue, but I can still help with a local response for now.",
             suggested_profile_updates=[],
             used_openai=False,
-            error=f"OpenAI unavailable right now ({exc.__class__.__name__}). Using local fallback.",
+            model=model,
+            error=f"OpenAI error: {exc.__class__.__name__}",
         )
