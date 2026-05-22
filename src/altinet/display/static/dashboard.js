@@ -1,7 +1,93 @@
 const ROOM_NAMES = [
   'Kitchen', 'Dining Room', 'Living Room', 'Bedroom 1', 'Bathroom', 'Laundry', 'Office', 'Entry'
 ];
-console.log('Altinet dashboard.js loaded');
+console.log("Altinet dashboard.js loaded");
+
+
+
+function getEl(id) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.warn(`Missing dashboard element: ${id}`);
+  }
+  return el;
+}
+
+function showAddUserForm() {
+  const form = getEl('add-user-form');
+  if (!form) return;
+  form.hidden = false;
+  getEl('user-display-name')?.focus();
+  setDashboardStatus('Add User form shown');
+}
+
+function hideAddUserForm() {
+  const form = getEl('add-user-form');
+  if (!form) return;
+  form.reset();
+  form.hidden = true;
+  setDashboardStatus('Add User cancelled');
+}
+
+async function saveUser(event) {
+  event.preventDefault();
+  const form = event.target;
+  const displayName = form.display_name.value?.trim();
+  if (!displayName) {
+    setDashboardStatus('Display name is required');
+    return;
+  }
+  const payload = {
+    display_name: displayName,
+    preferred_name: form.preferred_name.value || null,
+    access_level: form.access_level.value || 'resident_standard',
+    contextual_information: form.contextual_information.value || null,
+  };
+  setDashboardStatus('Saving user...');
+  try {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      setDashboardStatus(`Save failed (${response.status}): ${errorText}`);
+      console.error('Failed to save user', { status: response.status, errorText });
+      return;
+    }
+    await response.json();
+    await loadUsers();
+    form.reset();
+    form.access_level.value = 'resident_standard';
+    form.hidden = true;
+    setDashboardStatus('User saved');
+  } catch (error) {
+    console.error('Failed to save user', error);
+    setDashboardStatus(`Save failed: ${error.message}`);
+  }
+}
+
+async function seedDemoUsers() {
+  const seedButton = getEl('seed-demo-users-button');
+  const dashboardStatusEl = getEl('dashboard-status');
+  if (!seedButton) return;
+  console.log('Seed demo users button clicked');
+  if (dashboardStatusEl) dashboardStatusEl.textContent = 'Seeding demo users...';
+  seedButton.disabled = true;
+  try {
+    const response = await fetch('/api/registry/seed-demo', { method: 'POST' });
+    if (!response.ok) throw new Error(`Seed API failed (${response.status})`);
+    const payload = await response.json();
+    if (dashboardStatusEl) dashboardStatusEl.textContent = payload.message || 'Demo data seeded';
+    await loadUsers();
+  } catch (error) {
+    console.error('Failed to seed demo users', error);
+    if (dashboardStatusEl) dashboardStatusEl.textContent = `Failed to seed demo users: ${error.message}`;
+  } finally {
+    seedButton.disabled = false;
+  }
+}
 
 function setDashboardStatus(message) {
   const statusEl = document.getElementById('dashboard-status');
@@ -201,106 +287,48 @@ async function refreshState() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-refreshState();
-setInterval(refreshState, 2000);
+  console.log("Altinet dashboard DOM ready");
 
-loadUsers();
+  try { refreshState(); } catch (error) { console.error('refreshState startup failed', error); }
+  try { setInterval(refreshState, 2000); } catch (error) { console.error('refreshState interval failed', error); }
+  try { loadUsers(); } catch (error) { console.error('loadUsers startup failed', error); }
 
-document.getElementById('assistant-send')?.addEventListener('click', async () => {
-  const input = document.getElementById('assistant-input');
-  const text = input?.value || '';
-  if (!text.trim()) return;
-  appendAssistantMessage('user', text.trim());
-  input.value = '';
-  try {
-    const payload = await sendAssistantMessage(text.trim());
-    appendAssistantMessage('assistant', payload.reply || 'I'm here to help.');
-    const modeEl = document.getElementById('assistant-mode');
-    if (modeEl) modeEl.textContent = payload.used_openai ? 'using OpenAI' : 'local fallback';
-    renderSuggestedUpdates(payload.suggested_profile_updates || []);
-  } catch (_error) {
-    appendAssistantMessage('assistant', 'I hit a temporary issue. Using local fallback response.');
-    const modeEl = document.getElementById('assistant-mode');
-    if (modeEl) modeEl.textContent = 'local fallback';
-  }
-});
-
-const requiredElements = [
-  'dashboard-status', 'users-list', 'add-user-button', 'add-user-form', 'user-display-name',
-  'user-preferred-name', 'user-access-level', 'user-contextual-information', 'save-user-button', 'cancel-user-button'
-];
-const missingRequired = requiredElements.filter((id) => !document.getElementById(id));
-if (missingRequired.length > 0) setDashboardStatus(`Missing required DOM element(s): ${missingRequired.join(', ')}`);
-
-const addUserButton = document.getElementById('add-user-button');
-const addUserForm = document.getElementById('add-user-form');
-const cancelUserButton = document.getElementById('cancel-user-button');
-addUserButton?.addEventListener('click', () => {
-  if (addUserForm) {
-    addUserForm.hidden = false;
-    document.getElementById('user-display-name')?.focus();
-    setDashboardStatus('Add User form shown');
-  }
-});
-cancelUserButton?.addEventListener('click', () => {
-  if (addUserForm) {
-    addUserForm.reset();
-    addUserForm.hidden = true;
-    setDashboardStatus('Add User cancelled');
-  }
-});
-document.getElementById('add-user-form')?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const form = event.target;
-  const displayName = form.display_name.value?.trim();
-  if (!displayName) {
-    setDashboardStatus('Display name is required');
-    return;
-  }
-  const payload = {
-    display_name: displayName,
-    preferred_name: form.preferred_name.value || null,
-    access_level: form.access_level.value || 'resident_standard',
-    contextual_information: form.contextual_information.value || null,
-  };
-  setDashboardStatus('Saving user...');
-  try {
-    const response = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!response.ok) {
-      const errorText = await response.text();
-      setDashboardStatus(`Save failed (${response.status}): ${errorText}`);
-      console.error('Failed to save user', { status: response.status, errorText });
-      return;
+  const assistantSend = getEl('assistant-send');
+  assistantSend?.addEventListener('click', async () => {
+    const input = getEl('assistant-input');
+    const text = input?.value || '';
+    if (!text.trim()) return;
+    appendAssistantMessage('user', text.trim());
+    input.value = '';
+    try {
+      const payload = await sendAssistantMessage(text.trim());
+      appendAssistantMessage('assistant', payload.reply || "I'm here to help.");
+      const modeEl = getEl('assistant-mode');
+      if (modeEl) modeEl.textContent = payload.used_openai ? 'using OpenAI' : 'local fallback';
+      renderSuggestedUpdates(payload.suggested_profile_updates || []);
+    } catch (_error) {
+      appendAssistantMessage('assistant', 'I hit a temporary issue. Using local fallback response.');
+      const modeEl = getEl('assistant-mode');
+      if (modeEl) modeEl.textContent = 'local fallback';
     }
-    await response.json();
-    await loadUsers();
-    form.reset();
-    form.access_level.value = 'resident_standard';
-    form.hidden = true;
-    setDashboardStatus('User saved');
-  } catch (error) {
-    console.error('Failed to save user', error);
-    setDashboardStatus(`Save failed: ${error.message}`);
-  }
-});
+  });
 
-const seedButton = document.getElementById('seed-demo-users-button');
-const dashboardStatusEl = document.getElementById('dashboard-status');
-seedButton?.addEventListener('click', async () => {
-  console.log('Seed demo users button clicked');
-  if (dashboardStatusEl) dashboardStatusEl.textContent = 'Seeding demo users...';
-  seedButton.disabled = true;
-  try {
-    const response = await fetch('/api/registry/seed-demo', { method: 'POST' });
-    if (!response.ok) throw new Error(`Seed API failed (${response.status})`);
-    const payload = await response.json();
-    if (dashboardStatusEl) dashboardStatusEl.textContent = payload.message || 'Demo data seeded';
-    await loadUsers();
-  } catch (error) {
-    console.error('Failed to seed demo users', error);
-    if (dashboardStatusEl) dashboardStatusEl.textContent = `Failed to seed demo users: ${error.message}`;
-  } finally {
-    seedButton.disabled = false;
-  }
-});
+  const requiredElements = [
+    'dashboard-status', 'users-list', 'add-user-button', 'add-user-form', 'user-display-name',
+    'user-preferred-name', 'user-access-level', 'user-contextual-information', 'save-user-button', 'cancel-user-button'
+  ];
+  const missingRequired = requiredElements.filter((id) => !document.getElementById(id));
+  if (missingRequired.length > 0) setDashboardStatus(`Missing required DOM element(s): ${missingRequired.join(', ')}`);
+
+  getEl('add-user-button')?.addEventListener('click', showAddUserForm);
+  getEl('cancel-user-button')?.addEventListener('click', hideAddUserForm);
+  getEl('save-user-button')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    getEl('add-user-form')?.requestSubmit();
+  });
+  getEl('add-user-form')?.addEventListener('submit', saveUser);
+  getEl('seed-demo-users-button')?.addEventListener('click', seedDemoUsers);
+  getEl('ahlan-send-button')?.addEventListener('click', () => {
+    getEl('assistant-send')?.click();
+  });
 });
