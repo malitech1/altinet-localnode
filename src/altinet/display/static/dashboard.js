@@ -344,6 +344,7 @@ async function loadHomeLocation() {
   if (status) status.textContent = `Verification: ${loc.address_verified ? 'Verified' : 'Not verified'}`;
   if (formatted) formatted.textContent = loc.formatted_address ? `Formatted: ${loc.formatted_address}` : '';
   if (latlon) latlon.textContent = (loc.latitude !== null && loc.longitude !== null) ? `Lat/Lon: ${loc.latitude}, ${loc.longitude}` : '';
+  return loc;
 }
 
 async function saveHomeLocation(event) {
@@ -357,30 +358,70 @@ async function saveHomeLocation(event) {
 }
 
 async function verifyHomeLocation() {
-  const res = await fetch('/api/home/location/verify', {method:'POST'});
-  const payload = await res.json();
-  setDashboardStatus(payload.message || 'Verification complete');
-  await loadHomeLocation();
-  await loadWeather();
+  setDashboardStatus('Verifying address...');
+  try {
+    const res = await fetch('/api/home/location/verify', { method: 'POST' });
+    const payload = await res.json();
+    if (!res.ok || !payload.success) {
+      setDashboardStatus(payload.message || 'Unable to verify address');
+      await loadHomeLocation();
+      return;
+    }
+    setDashboardStatus(payload.message || 'Address verified');
+    await loadHomeLocation();
+    if (payload.latitude !== null && payload.latitude !== undefined && payload.longitude !== null && payload.longitude !== undefined) {
+      await loadWeather();
+    }
+  } catch (error) {
+    console.error('Address verification failed', error);
+    setDashboardStatus(`Unable to verify address: ${error.message}`);
+  }
 }
 
 async function loadWeather() {
-  const res = await fetch('/api/weather/current');
-  const payload = await res.json();
   const placeholder = document.getElementById('weather-placeholder');
   const details = document.getElementById('weather-details');
-  if (!payload.available) {
-    if (placeholder) placeholder.textContent = 'Set and verify home address to enable weather.';
+  if (placeholder) placeholder.textContent = 'Loading weather...';
+  if (details) details.innerHTML = '';
+  try {
+    const res = await fetch('/api/weather/current');
+    const payload = await res.json();
+    renderWeather(payload, res.ok);
+  } catch (error) {
+    console.error('Failed to load weather', error);
+    renderWeather({ available: false, message: 'Weather unavailable right now. Please try again.' }, false);
+  }
+}
+
+function renderWeather(weather, requestOk = true) {
+  const placeholder = document.getElementById('weather-placeholder');
+  const details = document.getElementById('weather-details');
+  if (!requestOk || !weather?.available) {
+    const message = weather?.message || 'Set and verify home address to enable weather.';
+    if (placeholder) placeholder.textContent = message;
     if (details) details.innerHTML = '';
     return;
   }
-  if (placeholder) placeholder.textContent = `${payload.temperature}°C · ${payload.weather_description}`;
-  if (details) details.innerHTML = `Feels like: ${payload.apparent_temperature}°C<br/>Humidity: ${payload.humidity}%<br/>Rain/Precipitation: ${payload.precipitation}<br/>Wind: ${payload.wind_speed}<br/>Condition: ${payload.weather_code}<br/>Last updated: ${payload.fetched_at}`;
+  const condition = weather.weather_description || weather.condition || weather.weather_code || 'Unknown';
+  if (placeholder) placeholder.textContent = `${weather.temperature}°C · ${condition}`;
+  if (details) {
+    details.innerHTML = `Feels like: ${weather.apparent_temperature}°C<br/>Humidity: ${weather.humidity}%<br/>Rain/Precipitation: ${weather.precipitation}<br/>Wind: ${weather.wind_speed}<br/>Condition: ${condition}<br/>Last updated: ${weather.fetched_at || 'Unknown'}`;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('home-location-form')?.addEventListener('submit', saveHomeLocation);
   document.getElementById('verify-address-button')?.addEventListener('click', verifyHomeLocation);
-  loadHomeLocation().catch(console.error);
-  loadWeather().catch(console.error);
+  loadHomeLocation()
+    .then((location) => {
+      if (location?.address_verified && location?.latitude !== null && location?.latitude !== undefined && location?.longitude !== null && location?.longitude !== undefined) {
+        return loadWeather();
+      }
+      renderWeather({ available: false, message: 'Set and verify home address to enable weather.' });
+      return null;
+    })
+    .catch((error) => {
+      console.error('Failed to load home location at startup', error);
+      renderWeather({ available: false, message: 'Set and verify home address to enable weather.' });
+    });
 });
