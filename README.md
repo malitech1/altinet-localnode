@@ -138,8 +138,10 @@ Troubleshooting webcam permissions (Windows):
 ## Dashboard access
 
 - Open the main dashboard at `/`.
+- Open settings at `/settings`.
 - Access Home Builder from the left sidebar (**Home Builder**) or the **Edit Home / Floorplan** button on the dashboard.
 - Home Builder URL: `/home-builder`.
+- Dashboard now shows live status and weather only; home address configuration is managed in **Settings → Home Location**.
 
 ## Dashboard Add User end-to-end test helper
 
@@ -658,9 +660,11 @@ Set environment variables:
 - `GOOGLE_MAPS_API_KEY=...`
 - `WEATHER_PROVIDER=open_meteo`
 
-In the dashboard, use the **Home Location** card to enter your address and click **Save Address**. Then click **Verify with Google** to geocode and verify. Verified location stores formatted address, latitude/longitude, place ID, and verification metadata.
+In **Settings** (`/settings`), use the **Home Location** card to enter your address and click **Save Address**. Then click **Verify with Google** to geocode and verify. Verified location stores formatted address, latitude/longitude, place ID, and verification metadata.
 
-Weather card calls `/api/weather/current` and uses Open-Meteo with the saved verified latitude/longitude. If no verified location exists, weather is unavailable until address verification is completed.
+Dashboard weather card calls `/api/weather/current` and uses Open-Meteo with the saved verified latitude/longitude. Weather location label comes from the verified home location (suburb/city, or derived from formatted address). If no verified location exists, weather is unavailable until address verification is completed.
+
+API key safety: configure keys via `.env` (`OPENAI_API_KEY`, `GOOGLE_MAPS_API_KEY`). Keys are never shown in dashboard/settings responses; only configured true/false status is exposed.
 
 Manual test:
 1. Open dashboard (`http://127.0.0.1:8000/`).

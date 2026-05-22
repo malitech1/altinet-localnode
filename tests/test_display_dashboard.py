@@ -78,6 +78,22 @@ def test_dashboard_contains_home_builder_navigation_links():
     assert 'Edit Home / Floorplan' in response.text
 
 
+def test_settings_route_returns_200_and_has_home_location_section():
+    client = TestClient(create_app())
+    response = client.get('/settings')
+    assert response.status_code == 200
+    assert 'Home Location' in response.text
+    assert '/api/home/location' in Path('src/altinet/display/static/settings.js').read_text(encoding='utf-8')
+    assert '/api/home/location/verify' in Path('src/altinet/display/static/settings.js').read_text(encoding='utf-8')
+
+
+def test_dashboard_links_to_settings_and_no_home_location_form():
+    client = TestClient(create_app())
+    response = client.get('/')
+    assert '/settings' in response.text
+    assert 'id="home-location-form"' not in response.text
+
+
 def test_dashboard_contains_required_element_ids():
     client = TestClient(create_app())
     response = client.get("/")

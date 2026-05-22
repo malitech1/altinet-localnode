@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Altinet Settings</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="settings-shell">
+      <section class="panel settings-main">
+        <header class="settings-header">
+          <div>
+            <p class="eyebrow">Configuration</p>
+            <h1>Altinet Settings</h1>
+          </div>
+          <a class="builder-link" href="/">Back to Dashboard</a>
+        </header>
+
+        <section class="panel settings-section" id="home-location-section">
+          <h3>Home Location</h3>
+          <form id="home-location-form">
+            <label>Address Line 1 <input name="address_line_1" /></label>
+            <label>Address Line 2 <input name="address_line_2" /></label>
+            <label>Suburb/City <input name="suburb_city" /></label>
+            <label>State/Region <input name="state_region" /></label>
+            <label>Postcode <input name="postcode" /></label>
+            <label>Country <input name="country" /></label>
+            <div class="dialog-actions">
+              <button id="save-address-button" type="submit">Save Address</button>
+              <button id="verify-address-button" type="button">Verify with Google</button>
+            </div>
+          </form>
+          <p id="location-status"></p>
+          <p id="formatted-address"></p>
+          <p id="lat-lon"></p>
+        </section>
+
+        <section class="panel settings-section"><h3>OpenAI / AHLAN</h3><div id="settings-openai"></div></section>
+        <section class="panel settings-section"><h3>Weather</h3><div id="settings-weather"></div></section>
+        <section class="panel settings-section"><h3>Perception</h3><div id="settings-perception"></div></section>
+        <section class="panel settings-section"><h3>Dashboard</h3><p>Coming soon.</p></section>
+        <section class="panel settings-section"><h3>Runtime</h3><div id="settings-runtime"></div></section>
+        <section class="panel settings-section"><h3>Privacy & Data</h3><div id="settings-data"></div></section>
+        <section class="panel settings-section"><h3>Devices & Integrations</h3><div id="settings-integrations"></div></section>
+      </section>
+    </main>
+    <script src="/static/settings.js"></script>
+  </body>
+</html>
