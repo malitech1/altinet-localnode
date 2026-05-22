@@ -115,3 +115,19 @@ def test_dashboard_js_contains_add_and_save_button_listeners():
     js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
     assert "add-user-button" in js
     assert "save-user-button" in js
+
+
+def test_dashboard_template_references_dashboard_js():
+    template = Path("src/altinet/display/templates/dashboard.html").read_text(encoding="utf-8")
+    assert '/static/dashboard.js' in template
+
+
+def test_dashboard_js_file_exists():
+    assert Path("src/altinet/display/static/dashboard.js").exists()
+
+
+def test_dashboard_js_contains_startup_guardrails():
+    js = Path("src/altinet/display/static/dashboard.js").read_text(encoding="utf-8")
+    assert "Altinet dashboard.js loaded" in js
+    assert "add-user-button" in js
+    assert "seed-demo-users-button" in js
