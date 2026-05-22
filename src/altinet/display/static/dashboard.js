@@ -47,16 +47,21 @@ function appendAssistantMessage(role, content) {
 }
 
 async function loadUsers() {
+  console.log('Loading users...');
   setDashboardStatus('Loading users...');
   try {
     const response = await fetch('/api/users');
     if (!response.ok) throw new Error(`GET /api/users failed (${response.status})`);
-    const users = await response.json();
-    window.__loadedUsers = Array.isArray(users) ? users : [];
+    const payload = await response.json();
+    const users = Array.isArray(payload) ? payload : (Array.isArray(payload?.users) ? payload.users : []);
+    console.log('Users response:', users);
+    window.__loadedUsers = users;
+    window.__usersLoaded = true;
     setDashboardStatus(`Loaded ${window.__loadedUsers.length} users`);
   } catch (error) {
     console.error('Failed to load users', error);
     window.__loadedUsers = [];
+    window.__usersLoaded = true;
     setDashboardStatus(`Failed to load users: ${error.message}`);
   }
   renderUsers(window.__loadedUsers);
@@ -65,15 +70,16 @@ async function loadUsers() {
 
 
 
-function firstContextLine(user) {
-  if (!user) return '';
-  if (typeof user.notes === 'string' && user.notes.trim()) return user.notes.trim();
-  const context = safeArray(user.contextual_information, []);
-  if (context.length > 0) {
-    const note = context[0]?.summary;
-    if (typeof note === 'string' && note.trim()) return note.trim();
+function formatContextualInformation(contextualInformation) {
+  if (!contextualInformation) return '';
+  if (typeof contextualInformation === 'string') return contextualInformation.trim();
+  if (Array.isArray(contextualInformation)) {
+    return contextualInformation.map((item) => {
+      if (typeof item === 'string') return item;
+      return item?.summary || item?.note || JSON.stringify(item);
+    }).filter(Boolean).join(' · ');
   }
-  return '';
+  return JSON.stringify(contextualInformation);
 }
 
 function renderUsers(users) {
@@ -83,15 +89,16 @@ function renderUsers(users) {
     return;
   }
   if (!users || users.length === 0) {
-    residentsEl.innerHTML = '<li class="empty-users">No users added yet. Run seed-demo-data or add a user.</li>';
+    residentsEl.innerHTML = '<li class="empty-users">No users added yet.</li>';
     return;
   }
   residentsEl.innerHTML = users.map((u) => {
-    const context = firstContextLine(u);
+    const contextualInformation = formatContextualInformation(u.contextual_information);
     return `<li class="user-card">
-      <div class="user-row"><strong class="user-name">${u.display_name}</strong><span class="badge access">${u.access_level}</span><span class="badge category">${u.category || 'unknown'}</span></div>
-      <div class="user-meta">${u.preferred_name ? `Preferred: ${u.preferred_name} · ` : ''}${u.relationship_to_home ? `Relationship: ${u.relationship_to_home} · ` : ''}Status: ${u.status || 'active'}</div>
-      ${context ? `<div class="user-context">${context}</div>` : ''}
+      <div class="user-row"><strong class="user-name">${u.display_name || 'Unknown User'}</strong><span class="badge access">${u.access_level || 'unknown'}</span>${u.category ? `<span class="badge category">${u.category}</span>` : ''}</div>
+      <div class="user-meta">${u.preferred_name ? `Preferred: ${u.preferred_name}` : 'Preferred: not set'}</div>
+      ${contextualInformation ? `<div class="user-context">Context: ${contextualInformation}</div>` : ''}
+      ${u.notes ? `<div class="user-notes">Notes: ${u.notes}</div>` : ''}
     </li>`;
   }).join('');
 }
@@ -168,7 +175,7 @@ async function refreshState() {
 
     const residents = extractResidents(data);
     const usersListEl = document.getElementById('users-list');
-    if (usersListEl && !usersListEl.innerHTML) {
+    if (usersListEl && !window.__usersLoaded && !usersListEl.innerHTML) {
       usersListEl.innerHTML = residents.map((r) => `<li>${r}</li>`).join('') || '<li>No residents available.</li>';
     }
 
@@ -198,7 +205,6 @@ refreshState();
 setInterval(refreshState, 2000);
 
 loadUsers();
-setDashboardStatus('Dashboard ready');
 
 document.getElementById('assistant-send')?.addEventListener('click', async () => {
   const input = document.getElementById('assistant-input');
