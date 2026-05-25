@@ -3,7 +3,7 @@ from pydantic import ValidationError
 
 from altinet.display.app import create_app
 from altinet.home.default_home import create_blank_home_model, create_default_home_model
-from altinet.home.models import HomeModel, PropertyBoundary
+from altinet.home.models import FurniturePlacement, HomeModel, PropertyBoundary, Wall
 from altinet.home.storage import load_home_model, save_home_model
 
 
@@ -52,15 +52,15 @@ def test_door_stores_wall_id_and_position_along_wall_m():
 def test_window_stores_wall_id_and_position_along_wall_m():
     model = create_default_home_model()
     model.windows.append({"id": "w1", "floor_id": "floor-ground", "room_id": None, "wall_id": "wall-north", "x": 1, "y": 0, "width": 1.2, "width_m": 1.2, "position_along_wall_m": 1.0})
-    assert model.windows[-1].wall_id == "wall-north"
-    assert model.windows[-1].position_along_wall_m == 1.0
+    assert model.windows[-1]["wall_id"] == "wall-north"
+    assert model.windows[-1]["position_along_wall_m"] == 1.0
 
 
 def test_room_stores_name_and_room_type():
     model = create_default_home_model()
     model.room_regions.append({"id": "region2", "floor_id": "floor-ground", "name": "Office", "room_type": "office", "points": [[0, 0], [1, 0], [1, 1]]})
-    assert model.room_regions[-1].name == "Office"
-    assert model.room_regions[-1].room_type == "office"
+    assert model.room_regions[-1]["name"] == "Office"
+    assert model.room_regions[-1]["room_type"] == "office"
 
 
 def test_save_load_home_model(tmp_path):
@@ -94,7 +94,7 @@ def test_deleting_wall_cleans_attached_doors_windows():
     wall_id = "wall-south"
     model.walls = [w for w in model.walls if w.id != wall_id]
     model.doors = [d for d in model.doors if d.wall_id != wall_id]
-    model.windows = [w for w in model.windows if w.wall_id != wall_id]
+    model.windows = [w for w in model.windows if (w.wall_id if hasattr(w, "wall_id") else w["wall_id"]) != wall_id]
     assert not [d for d in model.doors if d.wall_id == wall_id]
     assert not [w for w in model.windows if w.wall_id == wall_id]
 
@@ -146,23 +146,56 @@ def test_delete_light_and_pod_from_model_collections():
     model.lights.append({"id": "light-del", "room_id": None, "floor_id": "floor-ground", "name": "Delete Me", "x": 2.0, "y": 2.0, "type": "ceiling"})
     model.perception_pods.append({"id": "pod-del", "name": "Delete Me", "floor_id": "floor-ground", "x": 2.5, "y": 2.5, "orientation_degrees": 0.0, "camera_enabled": True, "microphone_enabled": True, "sensors": ["camera", "microphone"]})
 
-    model.lights = [light for light in model.lights if light.id != "light-del"]
-    model.perception_pods = [pod for pod in model.perception_pods if pod.id != "pod-del"]
+    model.lights = [light for light in model.lights if (light.id if hasattr(light, "id") else light["id"]) != "light-del"]
+    model.perception_pods = [pod for pod in model.perception_pods if (pod.id if hasattr(pod, "id") else pod["id"]) != "pod-del"]
 
-    assert all(light.id != "light-del" for light in model.lights)
-    assert all(pod.id != "pod-del" for pod in model.perception_pods)
+    assert all((light.id if hasattr(light, "id") else light["id"]) != "light-del" for light in model.lights)
+    assert all((pod.id if hasattr(pod, "id") else pod["id"]) != "pod-del" for pod in model.perception_pods)
 
 
 def test_door_window_fields_preserved_after_save_load(tmp_path):
     path = tmp_path / "home_model.json"
     model = create_default_home_model()
     model.doors[0].swing_direction = "left"
-    model.doors[0].type = "hinged"
-    model.windows.append({"id": "window-extra", "room_id": None, "wall_id": "wall-east", "floor_id": "floor-ground", "x": 6.0, "y": 1.0, "width": 1.1, "width_m": 1.1, "position_along_wall_m": 1.0, "height_m": 1.4, "type": "casement"})
+    model.doors[0].door_type = "hinged"
+    model.windows.append({"id": "window-extra", "room_id": None, "wall_id": "wall-east", "floor_id": "floor-ground", "x": 6.0, "y": 1.0, "width": 1.1, "width_m": 1.1, "position_along_wall_m": 1.0, "height_m": 1.4})
 
     save_home_model(model, path)
     loaded = load_home_model(path)
 
     assert loaded.doors[0].swing_direction == "left"
-    assert loaded.doors[0].type == "hinged"
-    assert any(window.id == "window-extra" and window.height_m == 1.4 and window.type == "casement" for window in loaded.windows)
+    assert loaded.doors[0].door_type == "hinged"
+    assert any(window.id == "window-extra" and window.height_m == 1.4 for window in loaded.windows)
+
+
+def test_furniture_model_validation_and_persist(tmp_path):
+    path = tmp_path / "home_model.json"
+    model = create_blank_home_model()
+    model.furniture_placements.append(FurniturePlacement(id="f1", floor_id="floor-ground", room_id=None, furniture_type="bed", x=1.0, y=1.0, width_m=2.0, depth_m=1.5, rotation_degrees=0, label="BED"))
+    save_home_model(model, path)
+    loaded = load_home_model(path)
+    assert loaded.furniture_placements[0].furniture_type == "bed"
+    assert loaded.furniture_placements[0].width_m == 2.0
+
+def test_api_returns_furniture(monkeypatch, tmp_path):
+    path = tmp_path / "home_model.json"
+    model = create_blank_home_model()
+    model.furniture_placements.append({"id":"f-api","floor_id":"floor-ground","room_id":None,"furniture_type":"sofa","x":2,"y":2,"width_m":2,"depth_m":0.8,"rotation_degrees":0,"label":None})
+    save_home_model(model, path)
+    monkeypatch.setattr("altinet.display.routes.load_home_model", lambda: load_home_model(path))
+    monkeypatch.setattr("altinet.display.routes.save_home_model", lambda m: save_home_model(m, path))
+    monkeypatch.setattr("altinet.display.routes.reset_to_demo_model", lambda: save_home_model(create_default_home_model(), path))
+    monkeypatch.setattr("altinet.display.routes.reset_to_blank_model", lambda: save_home_model(create_blank_home_model(), path))
+    client = TestClient(create_app())
+    body = client.get("/api/home").json()
+    assert any(x["id"] == "f-api" for x in body["furniture_placements"])
+
+def test_window_door_width_and_wall_type_persist(tmp_path):
+    path = tmp_path / "home_model.json"
+    model = create_default_home_model()
+    model.walls.append(Wall(id="w-int",floor_id="floor-ground",room_id=None,x1=0,y1=0,x2=1,y2=0,wall_type="internal",thickness=0.12))
+    save_home_model(model, path)
+    loaded = load_home_model(path)
+    assert loaded.doors[0].width_m == 0.9
+    assert loaded.walls[0].wall_type == "external"
+    assert any(w.id == "w-int" and w.wall_type == "internal" for w in loaded.walls)

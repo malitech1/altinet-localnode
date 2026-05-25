@@ -101,6 +101,19 @@ class DevicePlacement(BaseModel):
     kind: str = "light"
 
 
+class FurniturePlacement(BaseModel):
+    id: str
+    floor_id: str
+    room_id: str | None = None
+    furniture_type: Literal["bed", "sofa", "dining_table", "kitchen_counter", "bath", "toilet", "sink", "stove", "closet"]
+    x: float
+    y: float
+    width_m: float = Field(default=1.0, gt=0)
+    depth_m: float = Field(default=0.6, gt=0)
+    rotation_degrees: float = 0
+    label: str | None = None
+
+
 class PerceptionPodPlacement(BaseModel):
     id: str
     name: str
@@ -144,5 +157,9 @@ class HomeModel(BaseModel):
     windows: list[Window] = Field(default_factory=list)
     lights: list[Light] = Field(default_factory=list)
     perception_pods: list[PerceptionPodPlacement] = Field(default_factory=list)
+    furniture_placements: list[FurniturePlacement] = Field(default_factory=list)
     device_placements: list[DevicePlacement] = Field(default_factory=list)
     units: str = "metres"
+    visual_style: Literal["edit", "architectural"] = "edit"
+    show_grid: bool = True
+    show_dimensions: bool = True
