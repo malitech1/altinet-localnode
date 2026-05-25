@@ -21,3 +21,7 @@ button { padding: 8px 10px; border: none; border-radius: 6px; cursor: pointer; }
 .back-link:hover { background: #1f2937; }
 
 #floorplan .floor-item, #floorplan .floor-item * { pointer-events: all; cursor: pointer; }
+
+#floorplan.architectural { background: #f8f8f5; border-color: #d1d5db; }
+body.architectural-mode { background:#f3f4f6; color:#111827;}
+body.architectural-mode form, body.architectural-mode #selection-panel, body.architectural-mode #json-preview { background:#fff; color:#111827; border:1px solid #d1d5db;}

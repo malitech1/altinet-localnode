@@ -584,6 +584,11 @@ How to use:
 - Door/window properties panel supports in-place editing (`position_along_wall_m`, `width_m`, `height_m` for windows, `swing_direction` for doors, optional name) with **Apply Changes**, **Delete Selected**, and **Close**.
 - Zoom controls (**Zoom In**, **Zoom Out**, **Reset Zoom**) change the SVG `viewBox` and show live zoom percentage.
 - Grid and ruler labels are zoom-aware and switch scale from metres to centimetres.
+- **Architectural Style** toggle switches to a white paper-like plan style with black/grey walls, clean room labels, dimension text, and drafting-like symbols.
+- Door symbols now render with wall opening, leaf line, and quarter-arc swing in architectural style.
+- Window symbols now render as wall openings with parallel line markers.
+- **Place Furniture** mode and furniture type dropdown add reusable plan symbols (bed, sofa, dining table, kitchen counter, bath, toilet, sink, stove, closet).
+- Furniture placements, style toggles (`visual_style`, `show_grid`, `show_dimensions`) persist in home model JSON save/load.
 
 Manual verification checklist:
 

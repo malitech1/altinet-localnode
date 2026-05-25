@@ -2,6 +2,7 @@ from altinet.home.models import (
     DevicePlacement,
     Door,
     Floor,
+    FurniturePlacement,
     HomeModel,
     HouseDimensions,
     Light,
@@ -26,8 +27,12 @@ def create_blank_home_model() -> HomeModel:
         windows=[],
         lights=[],
         perception_pods=[],
+        furniture_placements=[],
         device_placements=[],
         units="metres",
+        visual_style="edit",
+        show_grid=True,
+        show_dimensions=True,
         location={},
     )
 
@@ -65,7 +70,11 @@ def create_default_home_model() -> HomeModel:
                 sensors=["camera", "microphone", "motion"],
             )
         ],
+        furniture_placements=[FurniturePlacement(id="furn-demo-bed", floor_id=room.floor_id, room_id=room.id, furniture_type="bed", x=4.8, y=1.2, width_m=1.9, depth_m=1.5, rotation_degrees=0, label="BED")],
         device_placements=[DevicePlacement(id="placement-light-demo-1", device_id=light.id, room_id=room.id, x=light.x, y=light.y)],
         units="metres",
+        visual_style="architectural",
+        show_grid=True,
+        show_dimensions=True,
         location={},
     )
