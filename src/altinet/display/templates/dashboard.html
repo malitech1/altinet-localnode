@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
-    <main class="dashboard-shell">
-      <aside class="panel sidebar-left">
+    <main class="app-shell">
+      <header class="top-navbar panel">
         <h1>Altinet LocalNode</h1>
         <nav>
           <ul class="nav-list">
@@ -23,96 +23,76 @@
             <li><a href="/settings">Settings</a></li>
           </ul>
         </nav>
-        <section class="mini-card">
-          <h3>System Status</h3>
-          <p id="system-status">Loading...</p>
-        </section>
-      </aside>
+        <div class="time-pill" id="current-time">--:--:--</div>
+      </header>
 
-      <section class="main-stage">
-        <header class="panel top-header">
-          <div>
+      <section class="dashboard-layout">
+        <aside class="panel dashboard-sidebar">
+          <section class="side-card compact-card">
             <p class="eyebrow">Home Intelligence Dashboard</p>
             <h2 id="header-date">Loading date...</h2>
-          </div>
-          <div class="time-pill" id="current-time">--:--:--</div>
-        </header>
+            <p id="system-status">Loading...</p>
+          </section>
 
-        <section class="panel weather-card">
-          <h3>Weather</h3>
-          <p id="weather-placeholder">Set and verify home address to enable weather.</p>
-          <div id="weather-details"></div>
-        </section>
+          <section class="side-card compact-card weather-card">
+            <h3>Weather</h3>
+            <p id="weather-placeholder">Set and verify home address to enable weather.</p>
+            <div id="weather-details"></div>
+          </section>
 
-        <section class="panel floorplan-panel" id="floorplan">
-          <h3>Floorplan</h3>
-          <div class="floorplan-grid" id="floorplan-grid"></div>
-          <div class="legend-row">
-            <span><i class="dot resident"></i>Resident</span>
-            <span><i class="dot device"></i>Device</span>
-            <span><i class="dot agent"></i>Agent</span>
-          </div>
-        </section>
+          <section class="side-card" id="residents">
+            <h3>Residents / Users</h3>
+            <div class="user-actions"><button id="add-user-button" type="button">Add User</button><button id="seed-demo-users-button" type="button">Seed Demo Users</button></div>
+            <p id="dashboard-status" class="dashboard-status" aria-live="polite"></p>
+            <form id="add-user-form" hidden>
+              <h4>Add User</h4>
+              <label>Display Name <input id="user-display-name" name="display_name" required /></label>
+              <label>Preferred Name <input id="user-preferred-name" name="preferred_name" /></label>
+              <label>Access Level
+                <select id="user-access-level" name="access_level">
+                  <option value="resident_owner">resident_owner</option><option value="resident_admin">resident_admin</option><option value="resident_standard" selected>resident_standard</option><option value="guest_family">guest_family</option><option value="guest_friend">guest_friend</option><option value="guest_visitor">guest_visitor</option><option value="service_person">service_person</option><option value="child">child</option><option value="pet">pet</option><option value="unknown">unknown</option><option value="restricted">restricted</option><option value="blocked">blocked</option><option value="intruder">intruder</option>
+                </select>
+              </label>
+              <label>Contextual Information <textarea id="user-contextual-information" name="contextual_information"></textarea></label>
+              <div class="dialog-actions"><button id="save-user-button" type="submit">Save User</button><button id="cancel-user-button" type="button">Cancel</button></div>
+            </form>
+            <ul id="users-list"></ul>
+          </section>
 
-        <section class="panel builder-cta">
-          <h3>Edit Home / Floorplan</h3>
-          <p>Open the Home Builder to update your home layout and floorplan details.</p>
-          <a class="builder-link" href="/home-builder">Edit Home / Floorplan</a>
-        </section>
-
-        <section class="bottom-cards" id="bottom-cards"></section>
-      </section>
-
-      <aside class="panel sidebar-right">
-        <section class="side-card">
-          <h3>Residents / Users</h3>
-          <div class="user-actions"><button id="add-user-button" type="button">Add User</button><button id="seed-demo-users-button" type="button">Seed Demo Users</button></div>
-          <p id="dashboard-status" class="dashboard-status" aria-live="polite"></p>
-          <form id="add-user-form" hidden>
-            <h4>Add User</h4>
-            <label>Display Name <input id="user-display-name" name="display_name" required /></label>
-            <label>Preferred Name <input id="user-preferred-name" name="preferred_name" /></label>
-            <label>Access Level
-              <select id="user-access-level" name="access_level">
-                <option value="resident_owner">resident_owner</option>
-                <option value="resident_admin">resident_admin</option>
-                <option value="resident_standard" selected>resident_standard</option>
-                <option value="guest_family">guest_family</option>
-                <option value="guest_friend">guest_friend</option>
-                <option value="guest_visitor">guest_visitor</option>
-                <option value="service_person">service_person</option>
-                <option value="child">child</option>
-                <option value="pet">pet</option>
-                <option value="unknown">unknown</option>
-                <option value="restricted">restricted</option>
-                <option value="blocked">blocked</option>
-                <option value="intruder">intruder</option>
-              </select>
-            </label>
-            <label>Contextual Information <textarea id="user-contextual-information" name="contextual_information"></textarea></label>
-            <div class="dialog-actions">
-              <button id="save-user-button" type="submit">Save User</button>
-              <button id="cancel-user-button" type="button">Cancel</button>
+          <section class="side-card" id="agents">
+            <h3>AHLAN Assistant</h3>
+            <p class="assistant-greeting">Hello, I’m AHLAN. I can help manage the home and learn resident preferences.</p>
+            <p id="ahlan-status" class="assistant-mode">Checking assistant status…</p>
+            <div id="ahlan-chat-history" class="assistant-chat"></div>
+            <div id="assistant-suggestions" class="assistant-suggestions"></div>
+            <div class="assistant-input-row">
+              <input id="ahlan-message-input" type="text" placeholder="Message AHLAN..." />
+              <button id="ahlan-send-button" type="button">Send</button>
             </div>
-          </form>
-          <ul id="users-list"></ul>
+          </section>
+
+          <section class="side-card" id="decisions">
+            <h3>Last 3 Decisions</h3>
+            <div id="decisions-list"></div>
+          </section>
+        </aside>
+
+        <section class="main-stage">
+          <section class="panel floorplan-panel" id="floorplan">
+            <h3>Floorplan</h3>
+            <div class="floorplan-grid" id="floorplan-grid"></div>
+            <div class="legend-row"><span><i class="dot resident"></i>Resident</span><span><i class="dot device"></i>Device</span><span><i class="dot agent"></i>Agent</span></div>
+          </section>
+
+          <section class="panel builder-cta">
+            <h3>Edit Home / Floorplan</h3>
+            <p>Open the Home Builder to update your home layout and floorplan details.</p>
+            <a class="builder-link" href="/home-builder">Edit Home / Floorplan</a>
+          </section>
+
+          <section class="bottom-cards" id="bottom-cards"></section>
         </section>
-        <section class="side-card">
-          <h3>AHLAN Assistant</h3>
-          <p class="assistant-greeting">Hello, I’m AHLAN. I can help manage the home and learn resident preferences.</p>
-          <p id="ahlan-status" class="assistant-mode">Checking assistant status…</p>
-          <div id="ahlan-chat-history" class="assistant-chat"></div>
-          <div id="assistant-suggestions" class="assistant-suggestions"></div>
-          <div class="assistant-input-row">
-            <input id="ahlan-message-input" type="text" placeholder="Message AHLAN..." />
-            <button id="ahlan-send-button" type="button">Send</button>
-          </div>
-        </section>
-        <section class="side-card">
-          <h3>Last 3 Decisions</h3>
-          <div id="decisions-list"></div>
-        </section>
-      </aside>
+      </section>
     </main>
     <script src="/static/dashboard.js"></script>
   </body>
